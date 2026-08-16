@@ -665,3 +665,59 @@ textarea:focus-visible {
     justify-content: center;
   }
 }
+
+/* Language + currency selectors in the top bar */
+.traveltour-top-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sl-currency-selector select,
+#google_translate_element .goog-te-gadget-simple {
+  font-size: 12px;
+  border-radius: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background-color: transparent;
+  color: inherit;
+}
+
+.sl-currency-selector select {
+  padding: 3px 6px;
+  cursor: pointer;
+}
+
+.sl-currency-selector select option {
+  color: #222;
+  background-color: #fff;
+}
+
+#google_translate_element {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+#google_translate_element .goog-te-gadget-simple {
+  padding: 3px 6px;
+}
+
+#google_translate_element .goog-te-gadget-simple .goog-te-menu-value span {
+  color: inherit;
+}
+
+/* Hide Google Translate's injected top banner iframe to avoid layout shift */
+.goog-te-banner-frame {
+  display: none !important;
+}
+
+body {
+  top: 0 !important;
+}
+
+@media (max-width: 768px) {
+  .traveltour-top-bar-right {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+}
