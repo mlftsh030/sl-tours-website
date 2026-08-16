@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en-US">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" href="images/logo.png" type="image/png">
+    <link rel="apple-touch-icon" sizes="180x180" href="images/logo.png">
+
+    <title>Page Not Found | SL Tours Cape Town</title>
+    <meta name="description" content="The page you're looking for isn't here. Browse SL Tours' Cape Town day trips, safaris, and airport transfers instead." />
+    <meta name="robots" content="noindex, follow" />
+    <link rel="canonical" href="https://sl-tours.com/404.html" />
+
+    <link rel='stylesheet' href='https://fonts.googleapis.com/css?family=Poppins:400,500,600,700|Open+Sans:400,600&display=swap' type='text/css' media='all' />
+
+    <style>
+        :root {
+            --sl-brand-orange: #d05c04;
+            --sl-brand-orange-dark: #b34f03;
+            --sl-brand-navy: #0a134e;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+        }
+
+        body {
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            font-family: 'Open Sans', Arial, sans-serif;
+            color: var(--sl-brand-navy);
+            background: #fdfaf7;
+        }
+
+        .sl-404-header {
+            padding: 24px 20px;
+            text-align: center;
+        }
+
+        .sl-404-header img {
+            height: 48px;
+            width: auto;
+        }
+
+        .sl-404-main {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .sl-404-card {
+            max-width: 560px;
+            text-align: center;
+        }
+
+        .sl-404-code {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 700;
+            font-size: 96px;
+            line-height: 1;
+            color: var(--sl-brand-orange);
+            margin: 0;
+        }
+
+        .sl-404-title {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+            font-size: 28px;
+            margin: 16px 0 12px;
+        }
+
+        .sl-404-text {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #4a5170;
+            margin: 0 0 32px;
+        }
+
+        .sl-404-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+            margin-bottom: 40px;
+        }
+
+        .sl-404-btn {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 500;
+            font-size: 14px;
+            text-decoration: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        .sl-404-btn-primary {
+            background: var(--sl-brand-orange);
+            color: #ffffff;
+        }
+
+        .sl-404-btn-primary:hover {
+            background: var(--sl-brand-orange-dark);
+        }
+
+        .sl-404-btn-secondary {
+            background: transparent;
+            color: var(--sl-brand-navy);
+            border: 1px solid #d7dae6;
+        }
+
+        .sl-404-btn-secondary:hover {
+            border-color: var(--sl-brand-orange);
+            color: var(--sl-brand-orange);
+        }
+
+        .sl-404-links {
+            font-size: 14px;
+        }
+
+        .sl-404-links a {
+            color: var(--sl-brand-navy);
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+
+        .sl-404-links a:hover {
+            color: var(--sl-brand-orange);
+        }
+
+        .sl-404-footer {
+            padding: 20px;
+            text-align: center;
+            font-size: 13px;
+            color: #8a90a8;
+        }
+    </style>
+</head>
+
+<body>
+    <header class="sl-404-header">
+        <a href="/">
+            <img src="images/logo.png" alt="SL Tours Cape Town">
+        </a>
+    </header>
+
+    <main class="sl-404-main">
+        <div class="sl-404-card">
+            <p class="sl-404-code">404</p>
+            <h1 class="sl-404-title">We couldn't find that page</h1>
+            <p class="sl-404-text">
+                The page you're looking for may have been moved or no longer exists.
+                Let's get you back to exploring Cape Town.
+            </p>
+
+            <div class="sl-404-actions">
+                <a class="sl-404-btn sl-404-btn-primary" href="/">Back to Home</a>
+                <a class="sl-404-btn sl-404-btn-secondary" href="/our_tours.html">Browse Tours</a>
+            </div>
+
+            <p class="sl-404-links">
+                <a href="/about-us.html">About Us</a> &middot;
+                <a href="/gallery.html">Gallery</a> &middot;
+                <a href="/contact.html">Contact</a>
+            </p>
+        </div>
+    </main>
+
+    <footer class="sl-404-footer">
+        &copy; <span id="sl-404-year"></span> SL Tours Cape Town
+    </footer>
+
+    <script>
+        document.getElementById('sl-404-year').textContent = new Date().getFullYear();
+    </script>
+</body>
+
+</html>
