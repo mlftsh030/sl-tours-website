@@ -1,0 +1,31 @@
+# Threat Model
+
+## Assets
+
+- Customer contact details and travel dates.
+- Booking, payment, and pickup information.
+- Staff operational data.
+- Tour pricing and quote information.
+- Admin credentials.
+
+## Threats And Mitigations
+
+| Threat | Risk | Current/Future Mitigation |
+| --- | --- | --- |
+| IDOR | Customer accesses another trip | Use opaque references/tokens now; add authenticated ownership checks before production |
+| SQL injection | Data compromise | Spring Data/JPA parameterization |
+| XSS | Session/data compromise | React escaping, avoid raw HTML, future CSP |
+| Brute force | Admin account compromise | Strong env password now; add rate limiting/MFA later |
+| Mass assignment | Unauthorized field changes | DTOs instead of exposed entities |
+| Secret leakage | Credential compromise | `.env.example` only, no real secrets |
+| Payment data exposure | Legal/compliance risk | Never store raw card details |
+| Insecure uploads | Malware or data exposure | Uploads not enabled; require MIME/extension/size scanning before launch |
+| Sensitive URLs | Trip privacy leak | Avoid predictable trip IDs; use auth/token strategy |
+
+## Highest Priority Gaps
+
+1. Production authentication and authorization.
+2. Customer trip ownership.
+3. Audit logging for staff workflows.
+4. Notification provider security.
+5. File upload/storage controls.
