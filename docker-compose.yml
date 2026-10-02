@@ -1,0 +1,53 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-sltours}
+      POSTGRES_USER: ${POSTGRES_USER:-sltours}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sltours}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sltours} -d ${POSTGRES_DB:-sltours}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ./apps/api
+    environment:
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://postgres:5432/sltours}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-sltours}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-sltours}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
+      SLTOURS_ADMIN_USERNAME: ${SLTOURS_ADMIN_USERNAME:-admin@sltours.local}
+      SLTOURS_ADMIN_PASSWORD: ${SLTOURS_ADMIN_PASSWORD:-change-me-in-env}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:8080}
+      SLTOURS_MEDIA_ROOT: /var/lib/sltours/media
+      SLTOURS_COLLECTION_APPROVAL_REQUIRED: ${SLTOURS_COLLECTION_APPROVAL_REQUIRED:-true}
+      SLTOURS_INSPECTION_MIN_PHOTOS: ${SLTOURS_INSPECTION_MIN_PHOTOS:-4}
+      SLTOURS_IDLE_TIMEOUT: ${SLTOURS_IDLE_TIMEOUT:-30m}
+    volumes:
+      # Private uploads: inspection photos, selfies, driver documents, vehicle and website images.
+      - media-data:/var/lib/sltours/media
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8081:8080"
+
+  web:
+    build:
+      context: ./apps/web
+    depends_on:
+      - api
+    ports:
+      - "8080:80"
+
+volumes:
+  postgres-data:
+  media-data:
