@@ -1,0 +1,8 @@
+sltours:
+  security:
+    admin-username: admin@test.local
+    admin-password: test-admin-password
+  pricing:
+    allow-sample-rates: true
+  inspections:
+    min-vehicle-photos: 4
