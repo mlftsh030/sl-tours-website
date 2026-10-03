@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useRef } from "react";
-import { Link } from "react-router-dom";
 import { EmptyState, ErrorState, LoadingState } from "../../components/StateBlocks";
 import { listTours } from "../../lib/api";
 import { PackageCard } from "../tours/PackageCard";
+import { SectionHeading } from "./SectionHeading";
 
 export function TourPackages() {
   const tours = useQuery({ queryKey: ["tours", "featured"], queryFn: () => listTours(true) });
@@ -22,10 +22,8 @@ export function TourPackages() {
   return (
     <section className="packages-band" aria-labelledby="packages-title">
       <div className="packages-inner">
-        <div className="packages-heading">
-          <h2 id="packages-title">Popular Tour Packages</h2>
-          <Link to="/experiences">View All Tours</Link>
-        </div>
+        <SectionHeading id="packages-title" eyebrow="Our tours" title="Featured tours" tone="dark"
+          lead="Guided day trips with pickup and drop-off, led by our local guides." link="/experiences" linkLabel="View all tours" />
         {tours.isLoading && <LoadingState label="Loading tour packages" />}
         {tours.isError && <ErrorState message={(tours.error as Error).message} />}
         {tours.data?.length === 0 && <EmptyState message="No tour packages are currently published." />}

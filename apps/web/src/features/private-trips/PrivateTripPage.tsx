@@ -1,7 +1,8 @@
 import { ReferralNotice } from "../partners/ReferralNotice";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { CheckCircle2, Info } from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
+import { Car, CheckCircle2, Info } from "lucide-react";
 import { PageBanner } from "../../components/PageBanner";
 import { ErrorState, LoadingState } from "../../components/StateBlocks";
 import { ApiRequestError } from "../../lib/api";
@@ -29,9 +30,25 @@ export function PrivateTripPage() {
   const [contact, setContact] = useState({ name: "", email: "", phone: "", requests: "" });
   const [idempotencyKey, setIdempotencyKey] = useState(newIdempotencyKey);
   const [notice, setNotice] = useState("");
-  const fleet = useQuery({ queryKey: ["private-trips", "fleet"], queryFn: listFleet, enabled: !query });
+  const [unavailable, setUnavailable] = useState("");
+  const fleet = useQuery({ queryKey: ["private-trips", "fleet"], queryFn: listFleet });
+  // A vehicle chosen elsewhere (for example the homepage slideshow) arrives as ?vehicle=ID.
+  const [params, setParams] = useSearchParams();
+  const wanted = params.get("vehicle");
+  const chosen = wanted ? fleet.data?.vehicles.find(v => v.id === wanted) ?? null : null;
   const search = useQuery({ queryKey: ["private-trips", "search", query], queryFn: () => searchPrivateTrips(query!), enabled: Boolean(query), retry: false });
   const vehicle = search.data?.vehicles.find(v => v.id === selected) ?? null;
+  // Keep the chosen vehicle in the enquiry, visibly and editably, so a quote request still says which vehicle was wanted.
+  useEffect(() => {
+    if (chosen) setContact(c => c.requests ? c : { ...c, requests: `Preferred vehicle: ${chosen.name}` });
+  }, [chosen?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  // After a search, select the chosen vehicle if it is free; otherwise say so and offer a quote.
+  useEffect(() => {
+    if (!chosen || !search.data) return;
+    const match = search.data.vehicles.find(v => v.id === chosen.id);
+    if (match) { setSelected(match.id); setMode(match.quote ? "book" : "quote"); setUnavailable(""); }
+    else setUnavailable(`The ${chosen.name} is not available for that time or group size. Choose another vehicle below, or request a quote and we will look for one.`);
+  }, [search.data, chosen?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (customer) setContact(c => ({ ...c, name: customer.name ?? "", email: customer.email ?? "" })); }, [customer?.email]);
 
   const book = useMutation({
@@ -46,7 +63,7 @@ export function PrivateTripPage() {
   });
   const quoteRequest = useMutation({ mutationFn: () => requestPrivateTripQuote({ idempotencyKey, date: trip.date, startTime: trip.time,
     durationMinutes: trip.durationMinutes, passengers: trip.passengers, pickupLocation: trip.pickup, destination: trip.destination,
-    preferredCategory: vehicle?.category ?? null, specialRequests: contact.requests || null, customerName: contact.name,
+    preferredCategory: vehicle?.category ?? chosen?.category ?? null, specialRequests: contact.requests || null, customerName: contact.name,
     customerEmail: contact.email, customerPhone: contact.phone || null }) });
 
   const update = (field: keyof typeof trip) => (event: { target: { value: string } }) =>
@@ -84,10 +101,16 @@ export function PrivateTripPage() {
 
   const today = localDate();
   return <>
-    <PageBanner title="Book a Private Trip" subtitle="A vehicle and professional driver by the hour, for your own itinerary" image="/assets/gallery/27.jpg" />
+    <PageBanner title="Private Trips" subtitle="A vehicle and professional driver by the hour, for your own itinerary" image="/assets/gallery/27.jpg" />
     <section className="section private-trip">
+      <p className="private-trip-related">Looking for a guided day instead? See our <Link to="/private-tours">private tours</Link> and <Link to="/transfers">airport transfers</Link>.</p>
       <form className="form-surface private-trip-search" onSubmit={findVehicles}>
         <h2>Plan your trip</h2>
+        {chosen && <div className="private-trip-chosen" role="status">
+          {chosen.imageUrl ? <img src={chosen.imageUrl} alt="" width="96" height="60" /> : <Car aria-hidden="true" />}
+          <p>You chose the <strong>{chosen.name}</strong> (up to {chosen.capacity} passengers). Enter your date, time and group to check it and see the price.</p>
+          <button type="button" className="text-link" onClick={() => { params.delete("vehicle"); setParams(params, { replace: true }); setSelected(null); }}>Choose another vehicle</button>
+        </div>}
         <div className="form-grid">
           <label><span>Date</span><input type="date" min={today} required value={trip.date} onChange={update("date")} /></label>
           <label><span>Start time</span><input type="time" required value={trip.time} onChange={update("time")} /></label>
@@ -109,6 +132,8 @@ export function PrivateTripPage() {
       {query && <>
         <div className="private-trip-heading"><p className="eyebrow">Available for your trip</p>
           <h2>{new Date(`${query.date}T${query.time}`).toLocaleString("en-ZA", { dateStyle: "full", timeStyle: "short" })} · {hoursLabel(query.durationMinutes)} · {query.passengers} passengers</h2></div>
+        {unavailable && <p className="private-trip-note" role="alert"><Info aria-hidden="true" />{unavailable}
+          <button className="text-link" type="button" onClick={() => setMode("quote")}>Request a quote</button></p>}
         {search.isLoading && <LoadingState label="Checking availability" />}{search.isError && <ErrorState message={search.error.message} />}
         {search.data && !search.data.vehicles.length && <div className="form-surface"><p>No listed vehicle is free for that time and group size. Try another time, or ask us for a quote and we will find a solution.</p>
           <button className="button button-secondary" type="button" onClick={() => setMode("quote")}>Request a quote</button></div>}

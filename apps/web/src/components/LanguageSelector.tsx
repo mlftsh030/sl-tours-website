@@ -74,5 +74,5 @@ function loadGoogleTranslate() {
 
 export function LanguageSelector() {
   useEffect(loadGoogleTranslate, []);
-  return <div id={MOUNT_ID} className="language-selector" aria-label="Select language" />;
+  return <div id={MOUNT_ID} className="language-selector" role="group" aria-label="Select language" />;
 }

@@ -93,6 +93,7 @@ export function TourDetailPage() {
             <Link className="button button-primary" to={`/book/${detail.slug}`}>
               Book Online
             </Link>
+            <Link className="button button-quiet" to={`/contact?tour=${detail.slug}#enquiry`}>Ask about this tour</Link>
             <a
               className="button button-whatsapp"
               href={whatsappReserveUrl(detail.title)}

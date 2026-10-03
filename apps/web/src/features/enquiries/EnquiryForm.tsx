@@ -13,8 +13,18 @@ import { submitEnquiry, type EnquiryPayload } from "./enquiryApi";
 const emptyForm = { name: "", email: "", phone: "", message: "", interest: "GENERAL", tourSlug: "", date: "", pickup: "", passengers: "" };
 
 /** Contact form that stores the enquiry with SL Tours before confirming it to the customer. */
+/** A link such as /contact?tour=cape-point-tour or ?topic=PRIVATE_TRIP opens the form with that selection. */
+function initialForm() {
+  const params = new URLSearchParams(typeof window === "undefined" ? "" : window.location.search);
+  const tour = params.get("tour");
+  const topic = params.get("topic");
+  if (tour && /^[a-z0-9-]{1,160}$/.test(tour)) return { ...emptyForm, interest: "TOUR", tourSlug: tour };
+  if (topic === "PRIVATE_TRIP" || topic === "TOUR") return { ...emptyForm, interest: topic };
+  return emptyForm;
+}
+
 export function EnquiryForm() {
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState(initialForm);
   // One key per enquiry: retries after a network failure reuse it, so the API stores the enquiry once.
   const [idempotencyKey, setIdempotencyKey] = useState(newIdempotencyKey);
   const tours = useQuery({ queryKey: ["tours"], queryFn: () => listTours(), enabled: form.interest === "TOUR" });

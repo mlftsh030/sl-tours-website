@@ -8,16 +8,18 @@ import { SocialLinks } from "../components/SocialLinks";
 import { contact } from "../lib/contact";
 import { CurrencySelect } from "../lib/currency";
 
+/** Primary navigation. `match` lists the pages that belong to each section, so related pages show it as active. */
 const navItems = [
-  { to: "/", label: "Home" },
-  { to: "/experiences", label: "Our Tours" },
-  { to: "/private-tours", label: "Private Tours" },
-  { to: "/transfers", label: "Transfers" },
-  { to: "/plan-my-trip", label: "Plan My Trip" },
-  { to: "/gallery", label: "Gallery" },
-  { to: "/about", label: "About Us" },
-  { to: "/contact", label: "Contact Us" }
+  { to: "/", label: "Home", match: [] as string[] },
+  { to: "/about", label: "About", match: [] },
+  { to: "/experiences", label: "Our Tours", match: ["/experiences", "/book/"] },
+  { to: "/book-private-trip", label: "Private Trips", match: ["/book-private-trip", "/private-tours", "/transfers"] },
+  { to: "/gallery", label: "Gallery", match: [] },
+  { to: "/explore", label: "Things to Do in Cape Town", match: ["/explore"] },
+  { to: "/contact", label: "Contact Us", match: [] }
 ];
+const isActive = (item: (typeof navItems)[number], pathname: string) =>
+  item.to === "/" ? pathname === "/" : pathname === item.to || pathname.startsWith(item.to + "/") || item.match.some(m => pathname === m || pathname.startsWith(m.endsWith("/") ? m : m + "/"));
 
 const whyChooseUs = [
   "Our guides are knowledgeable and friendly",
@@ -54,6 +56,8 @@ export function AppLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const closeButton = useRef<HTMLButtonElement>(null);
+  const menuButton = useRef<HTMLButtonElement>(null);
+  const menu = useRef<HTMLDivElement>(null);
   const { pathname, search } = useLocation();
   // Partner referral links (?ref=CODE): validate and keep the code for later bookings and enquiries.
   useEffect(() => {
@@ -74,11 +78,20 @@ export function AppLayout() {
     closeButton.current?.focus();
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    const onKey = (event: KeyboardEvent) => event.key === "Escape" && setMenuOpen(false);
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") { setMenuOpen(false); return; }
+      // Keep keyboard focus inside the open menu.
+      if (event.key !== "Tab" || !menu.current) return;
+      const items = [...menu.current.querySelectorAll<HTMLElement>("a[href], button")];
+      const first = items[0], last = items[items.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    };
     document.addEventListener("keydown", onKey);
     return () => {
       document.body.style.overflow = previousOverflow;
       document.removeEventListener("keydown", onKey);
+      menuButton.current?.focus();
     };
   }, [menuOpen]);
 
@@ -106,11 +119,10 @@ export function AppLayout() {
             <img src="/assets/logo.png" alt="" width="56" height="56" />
           </NavLink>
           <nav className="desktop-nav" aria-label="Primary navigation">
-            {navItems.map((item) => (
-              <NavLink key={item.to} to={item.to} end={item.to === "/"}>
-                {item.label}
-              </NavLink>
-            ))}
+            {navItems.map((item) => {
+              const active = isActive(item, pathname);
+              return <Link key={item.to} to={item.to} className={active ? "active" : undefined} aria-current={active ? "page" : undefined}>{item.label}</Link>;
+            })}
           </nav>
           <div className="nav-actions">
             <button
@@ -128,14 +140,15 @@ export function AppLayout() {
             <NavLink className="button button-primary desktop-only" to="/experiences">
               Book Now
             </NavLink>
-            <button className="icon-button mobile-only" type="button" onClick={() => setMenuOpen(true)} aria-label="Open menu">
+            <button ref={menuButton} className="icon-button mobile-only" type="button" onClick={() => setMenuOpen(true)} aria-label="Open menu"
+              aria-expanded={menuOpen} aria-controls="mobile-menu">
               <Menu aria-hidden="true" />
             </button>
           </div>
         </div>
         {searchOpen && <SearchForm onDone={() => setSearchOpen(false)} />}
         {menuOpen && (
-          <div className="mobile-menu" role="dialog" aria-modal="true" aria-label="Mobile navigation">
+          <div ref={menu} id="mobile-menu" className="mobile-menu" role="dialog" aria-modal="true" aria-label="Menu">
             <div className="mobile-menu-header">
               <img src="/assets/logo.png" alt="SL Tours" width="48" height="48" />
               <button ref={closeButton} className="icon-button" type="button" onClick={() => setMenuOpen(false)} aria-label="Close menu">
@@ -143,15 +156,15 @@ export function AppLayout() {
               </button>
             </div>
             <nav aria-label="Mobile navigation links">
-              {navItems.map((item) => (
-                <NavLink key={item.to} to={item.to} end={item.to === "/"} onClick={() => setMenuOpen(false)}>
-                  {item.label}
-                </NavLink>
-              ))}
+              {navItems.map((item) => {
+                const active = isActive(item, pathname);
+                return <Link key={item.to} to={item.to} className={active ? "active" : undefined} aria-current={active ? "page" : undefined}
+                  onClick={() => setMenuOpen(false)}>{item.label}</Link>;
+              })}
               <a href="/account">My Trip</a>
-              <a href="/operations">Operations</a>
             </nav>
-            <a className="button button-primary" href={contact.whatsapp} target="_blank" rel="noopener noreferrer">
+            <Link className="button button-primary" to="/experiences" onClick={() => setMenuOpen(false)}>Book Now</Link>
+            <a className="button button-secondary mobile-menu-whatsapp" href={contact.whatsapp} target="_blank" rel="noopener noreferrer">
               <WhatsAppIcon aria-hidden="true" />
               WhatsApp SL Tours
             </a>
@@ -186,10 +199,10 @@ export function AppLayout() {
                 <Link to="/experiences">Our Tours</Link>
               </li>
               <li>
-                <Link to="/explore">Explore Cape Town</Link>
+                <Link to="/book-private-trip">Private Trips</Link>
               </li>
               <li>
-                <Link to="/book-private-trip">Book a Private Trip</Link>
+                <Link to="/explore">Things to Do in Cape Town</Link>
               </li>
               <li>
                 <Link to="/plan-my-trip">Plan My Trip</Link>

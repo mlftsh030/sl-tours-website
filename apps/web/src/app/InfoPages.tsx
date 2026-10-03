@@ -214,7 +214,7 @@ export function ContactPage() {
           <strong>View On Google Map</strong>
         </a>
       </section>
-      <section className="section contact-layout">
+      <section className="section contact-layout" id="enquiry">
         <EnquiryForm />
         <aside className="contact-aside">
           <h2>Planning something bigger?</h2>

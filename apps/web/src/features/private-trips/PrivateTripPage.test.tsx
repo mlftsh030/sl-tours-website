@@ -53,4 +53,35 @@ describe("Book a Private Trip", () => {
     expect(submitted[0].idempotencyKey).toBe(submitted[1].idempotencyKey);
     expect(submitted[1]).toMatchObject({ vehicleId: "v-1", durationMinutes: 240, pickupLocation: "Camps Bay", expectedTotalCents: 280000 });
   });
+
+  it("keeps a vehicle chosen on the homepage, and falls back to a quote that still names it, with the referral", async () => {
+    localStorage.setItem("sltours.referral", JSON.stringify({ code: "HARBOUR2", partnerName: "Harbour Hotel", capturedAt: new Date().toISOString(), source: "LINK" }));
+    const quotes: Array<Record<string, unknown>> = [];
+    const h1 = { ...van(0), id: "v-h1", name: "Hyundai H1", quote: null };
+    vi.stubGlobal("fetch", vi.fn((url: string, options?: RequestInit) => {
+      if (url.endsWith("/csrf")) return json({ token: "t", headerName: "X-CSRF-TOKEN" });
+      if (url.includes("/api/v1/auth/me")) return json({ authenticated: false, email: null, name: null, role: null });
+      if (url.includes("/private-trips/vehicles")) return json({ vehicles: [van(0), h1], disclosures });
+      if (url.includes("/private-trips/availability")) return json({ startsAt: "", endsAt: "", durationMinutes: 240, passengers: 2, vehicles: [van(260000)], disclosures });
+      if (url.includes("/private-trips/quote-requests")) { quotes.push(JSON.parse(String(options?.body)));
+        return json({ reference: "SLE-2026-QUOTE1", status: "NEW", message: "Thank you.", duplicate: false }, 201); }
+      return Promise.reject(new Error(`Unexpected ${url}`));
+    }));
+    render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+      <MemoryRouter initialEntries={["/book-private-trip?vehicle=v-h1"]}><PrivateTripPage /></MemoryRouter></QueryClientProvider>);
+    expect(await screen.findByText(/You chose the/)).toHaveTextContent("You chose the Hyundai H1 (up to 7 passengers)");
+    await userEvent.type(screen.getByLabelText("Pickup location"), "Sea Point");
+    await userEvent.type(screen.getByLabelText("Destination or planned itinerary"), "Cape Point");
+    await userEvent.click(screen.getByRole("button", { name: "Show available vehicles" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("The Hyundai H1 is not available for that time or group size");
+    await userEvent.click(screen.getByRole("button", { name: "Request a quote" }));
+    expect(screen.getByLabelText(/Special requests/)).toHaveValue("Preferred vehicle: Hyundai H1");
+    expect(screen.getByRole("note")).toHaveTextContent("Referred by Harbour Hotel");
+    await userEvent.type(screen.getByLabelText("Name"), "Thandi");
+    await userEvent.type(screen.getByLabelText("Email"), "thandi@example.com");
+    await userEvent.click(screen.getByRole("button", { name: "Send quote request" }));
+    await screen.findByText("SLE-2026-QUOTE1");
+    expect(quotes[0]).toMatchObject({ preferredCategory: "VAN", specialRequests: "Preferred vehicle: Hyundai H1", referral: { code: "HARBOUR2", source: "LINK" } });
+    localStorage.clear();
+  });
 });

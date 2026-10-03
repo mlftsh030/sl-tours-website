@@ -1,6 +1,6 @@
-import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { galleryPhotos, thumbSrc } from "../gallery/photos";
+import { SectionHeading } from "./SectionHeading";
 
 const featuredIds = [30, 5, 43, 16, 44, 34];
 const featured = featuredIds.flatMap((id) => galleryPhotos.filter((photo) => photo.id === id));
@@ -8,13 +8,7 @@ const featured = featuredIds.flatMap((id) => galleryPhotos.filter((photo) => pho
 export function GalleryStrip() {
   return (
     <section className="gallery-strip" aria-labelledby="gallery-strip-title">
-      <div className="gallery-strip-heading">
-        <h2 id="gallery-strip-title">Pictures Taken On Tour</h2>
-        <Link className="text-link" to="/gallery">
-          View Gallery
-          <ArrowRight aria-hidden="true" />
-        </Link>
-      </div>
+      <SectionHeading id="gallery-strip-title" eyebrow="Gallery" title="Pictures taken on tour" link="/gallery" linkLabel="View the gallery" />
       <ul className="gallery-strip-grid">
         {featured.map((photo) => (
           <li key={photo.id}>

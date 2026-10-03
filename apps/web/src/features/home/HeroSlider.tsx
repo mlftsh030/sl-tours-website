@@ -77,9 +77,10 @@ export function HeroSlider() {
             {index === 0 ? <h1>{slide.title}</h1> : <p className="hero-slide-title">{slide.title}</p>}
             <p className="hero-slide-subtitle">{slide.subtitle}</p>
             {slide.text && <p className="hero-slide-text">{slide.text}</p>}
-            <Link className="button button-navy" to="/experiences" tabIndex={index === active ? 0 : -1}>
-              Learn More
-            </Link>
+            <div className="hero-actions">
+              <Link className="button button-primary" to="/experiences" tabIndex={index === active ? 0 : -1}>Book a tour</Link>
+              <Link className="button button-quiet button-on-dark" to="/contact" tabIndex={index === active ? 0 : -1}>Enquire</Link>
+            </div>
           </div>
         </div>
       ))}

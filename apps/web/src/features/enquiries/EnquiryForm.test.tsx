@@ -56,4 +56,16 @@ describe("website enquiry form", () => {
     await waitFor(() => expect(screen.getByText("Enquiry received")).toBeInTheDocument());
     expect(fetcher.mock.calls.filter(([url]) => url === "/api/v1/enquiries")).toHaveLength(1);
   });
+
+  it("opens with the tour chosen on a tour page", async () => {
+    window.history.pushState({}, "", "/contact?tour=cape-peninsula-journey");
+    vi.stubGlobal("fetch", vi.fn().mockImplementation((url: string) => url.includes("/api/v1/tours")
+      ? Promise.resolve(new Response(JSON.stringify([{ slug: "cape-peninsula-journey", title: "Cape Peninsula Journey" }]), { headers: { "Content-Type": "application/json" } }))
+      : Promise.reject(new Error(url))));
+    renderForm();
+    expect(await screen.findByRole("option", { name: "Cape Peninsula Journey" })).toBeInTheDocument();
+    expect(screen.getByDisplayValue("One of your tours")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("Cape Peninsula Journey")).toBeInTheDocument();
+    window.history.pushState({}, "", "/");
+  });
 });
