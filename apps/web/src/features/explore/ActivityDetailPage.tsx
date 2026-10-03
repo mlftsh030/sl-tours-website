@@ -1,3 +1,4 @@
+import { AssistantLauncher } from "../assistant/AssistantLauncher";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 import { Clock, CloudSun, ExternalLink, HelpCircle, MapPin, ShieldCheck } from "lucide-react";
@@ -53,7 +54,8 @@ export function ActivityDetailPage() {
           {a.hours.length > 0 && <div className="admin-table-wrap activity-table"><table>
             <thead><tr><th>{a.scheduleType === "SESSIONS" ? "Session" : "Hours"}</th><th>Days</th><th>Season</th></tr></thead>
             <tbody>{a.hours.map((h, i) => <tr key={i}>
-              <td data-label={a.scheduleType === "SESSIONS" ? "Session" : "Hours"}>{hhmm(h.opens)}-{hhmm(h.closes)}{h.lastEntry && <small>Last entry {hhmm(h.lastEntry)}</small>}{h.notes && <small>{h.notes}</small>}</td>
+              <td data-label={a.scheduleType === "SESSIONS" ? "Session" : "Hours"}>{hhmm(h.opens)}-{hhmm(h.closes)}{h.lastEntry && <small>Last entry {hhmm(h.lastEntry)}</small>}{h.notes && <small>{h.notes}</small>}
+                {h.caution && <small className="activity-caution">Not confirmed: {h.caution}</small>}</td>
               <td data-label="Days">{dayList(h.daysOfWeek)}</td>
               <td data-label="Season">{h.seasonStart ? `${h.seasonLabel ? `${h.seasonLabel}: ` : ""}${monthDay(h.seasonStart)} - ${monthDay(h.seasonEnd!)}` : "All year"}</td>
             </tr>)}</tbody></table></div>}
@@ -62,15 +64,20 @@ export function ActivityDetailPage() {
           {current.length > 0 && <PriceTable prices={current} />}
           {upcoming.length > 0 && <><h4>Announced prices</h4><PriceTable prices={upcoming} /></>}
           {a.extras.length > 0 && <><h4>Additional costs</h4><ul className="activity-extras">{a.extras.map(x =>
-            <li key={x.label}><strong>{x.label}</strong>: {formatAmount(x.amountCents)} {unitLabel[x.unit]} {x.mandatory ? "(required)" : "(optional)"}{x.conditions && <small>{x.conditions}</small>}</li>)}</ul></>}
-          {(a.minAge != null || a.accompanimentRule) && <><h3>Who can take part</h3><ul className="activity-extras">
-            {a.minAge != null && <li>Minimum age {a.minAge}</li>}{a.accompanimentRule && <li>{a.accompanimentRule}</li>}</ul></>}
+            <li key={x.label}><strong>{x.label}</strong>: {formatAmount(x.amountCents)} {unitLabel[x.unit]} {x.mandatory ? "(required)" : "(optional)"}{x.conditions && <small>{x.conditions}</small>}
+            {x.caution && <small className="activity-caution">Not confirmed: {x.caution}</small>}</li>)}</ul></>}
+          {(a.minAge != null || a.accompanimentRule || a.participationRules !== "KNOWN") && <><h3>Who can take part</h3><ul className="activity-extras">
+            {a.minAge != null && <li>Minimum age {a.minAge}</li>}{a.accompanimentRule && <li>{a.accompanimentRule}</li>}
+            {a.participationRules !== "KNOWN" && <li className="activity-caution">{a.participationRules === "UNKNOWN"
+              ? "Age, height or other limits are not published" : "Limits are only partly published"}{a.participationNote ? `: ${a.participationNote}` : ""}.
+              Check with the operator before you go.</li>}</ul></>}
         </article>
         <aside className="booking-panel detail-panel">
           {a.address && <p className="detail-guests"><MapPin aria-hidden="true" />{a.address}</p>}
           {a.bookingNotes && <p>{a.bookingNotes}</p>}
           {a.officialUrl && <a className="button button-secondary" href={a.officialUrl} target="_blank" rel="noopener noreferrer"><ExternalLink aria-hidden="true" />Official website</a>}
           <Link className="button button-primary" to={`/explore/plan?include=${a.slug}`}>Plan a day with this</Link>
+          <AssistantLauncher />
           <h3>Sources</h3>
           <ul className="activity-sources">{a.sources.map(s => <li key={s.url}><a href={s.url} target="_blank" rel="noopener noreferrer">{s.publisher}</a>
             <small>{s.covers}. Checked {shortDate(s.accessedOn)}.</small></li>)}</ul>
@@ -89,7 +96,8 @@ function PriceTable({ prices }: { prices: PublicPrice[] }) {
   return <div className="admin-table-wrap activity-table"><table>
     <thead><tr><th>Ticket</th><th>Price</th><th>Valid</th></tr></thead>
     <tbody>{prices.map((p, i) => <tr key={i}>
-      <td data-label="Ticket">{p.label}{priceWhen(p) && <small>{priceWhen(p)}</small>}{p.conditions && <small>{p.conditions}</small>}</td>
+      <td data-label="Ticket">{p.label}{priceWhen(p) && <small>{priceWhen(p)}</small>}{p.conditions && <small>{p.conditions}</small>}
+        {p.caution && <small className="activity-caution">Not confirmed: {p.caution}</small>}</td>
       <td data-label="Price">{p.amountCents === 0 ? "Free" : formatAmount(p.amountCents)} <small>{unitLabel[p.unit]}</small></td>
       <td data-label="Valid">{p.effectiveFrom || p.effectiveTo ? `${p.effectiveFrom ? shortDate(p.effectiveFrom) : ""} - ${p.effectiveTo ? shortDate(p.effectiveTo) : "until changed"}` : "Until changed"}
         {p.sourceUrl && <small><a href={p.sourceUrl} target="_blank" rel="noopener noreferrer">{p.sourcePublisher ?? "Source"}</a>, checked {shortDate(p.verifiedOn)}</small>}</td>

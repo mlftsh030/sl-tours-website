@@ -1,3 +1,4 @@
+import { AssistantLauncher } from "../assistant/AssistantLauncher";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router-dom";
@@ -32,7 +33,10 @@ export function ExplorePage() {
             <h2>Put a day together</h2>
             <p>Choose your interests and who is travelling. We order the stops sensibly, check opening times and show every cost and assumption.</p>
           </div>
-          <Link className="button button-primary" to="/explore/plan">Plan a day</Link>
+          <div className="explore-cta-actions">
+            <Link className="button button-primary" to="/explore/plan">Plan a day</Link>
+            <AssistantLauncher />
+          </div>
         </aside>
         <div className="tours-toolbar">
           <div className="filter-row" role="group" aria-label="Filter by category">

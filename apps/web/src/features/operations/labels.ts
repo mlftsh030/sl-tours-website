@@ -5,7 +5,7 @@ export const enquiryStatusLabels: Record<string, string> = {
   NEW: "New", IN_PROGRESS: "In progress", AWAITING_CUSTOMER: "Awaiting customer", CONVERTED: "Converted to booking", CLOSED: "Closed"
 };
 export const enquirySourceLabels: Record<string, string> = {
-  CONTACT_FORM: "Contact form", TRIP_PLANNER: "Trip planner", PRIVATE_TRIP_QUOTE: "Private trip quote"
+  CONTACT_FORM: "Contact form", TRIP_PLANNER: "Trip planner", PRIVATE_TRIP_QUOTE: "Private trip quote", ASSISTANT: "Planning assistant"
 };
 export const dateTime = (value: string | null | undefined) => value ? new Date(value).toLocaleString("en-ZA", { dateStyle: "medium", timeStyle: "short" }) : "—";
 export const categoryLabels: Record<string, string> = {

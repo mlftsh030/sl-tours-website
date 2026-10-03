@@ -122,7 +122,7 @@ export interface AdminTour { id: string; version: number; status: TourStatus; di
 export interface SaveTour extends Omit<TourDetail, "cardNote"> { version: number; status: TourStatus; displayOrder: number; cardNote: string | null; }
 export interface AdminCustomer { name: string; email: string; phone: string | null; registered: boolean; bookingCount: number; totalAmountCents: number; lastLoginAt: string | null; activeSessions: number; }
 export type EnquiryStatus = "NEW" | "IN_PROGRESS" | "AWAITING_CUSTOMER" | "CONVERTED" | "CLOSED";
-export type EnquirySource = "CONTACT_FORM" | "TRIP_PLANNER" | "PRIVATE_TRIP_QUOTE";
+export type EnquirySource = "CONTACT_FORM" | "TRIP_PLANNER" | "PRIVATE_TRIP_QUOTE" | "ASSISTANT";
 export type EnquiryType = "GENERAL" | "TOUR" | "PRIVATE_TRIP";
 export interface EnquiryReceipt { reference: string; status: EnquiryStatus; message: string; duplicate: boolean; }
 export interface EnquirySummary {
@@ -268,23 +268,38 @@ export interface PublicPrice {
   label: string; audience: PriceAudience; minAge: number | null; maxAge: number | null; residency: Residency; unit: PriceUnit; amountCents: number;
   daysOfWeek: string | null; timeFrom: string | null; timeTo: string | null; conditions: string | null; effectiveFrom: string | null;
   effectiveTo: string | null; verifiedOn: string; sourceUrl: string | null; sourcePublisher: string | null; currentlyEffective: boolean;
+  /** Unresolved doubt or overdue re-check, shown with the figure. */
+  caution: string | null;
 }
-export interface ActivityHoursRow { seasonLabel: string | null; seasonStart: string | null; seasonEnd: string | null; daysOfWeek: string | null; opens: string; closes: string; lastEntry: string | null; notes: string | null; }
+export interface ActivityHoursRow { seasonLabel: string | null; seasonStart: string | null; seasonEnd: string | null; daysOfWeek: string | null; opens: string; closes: string; lastEntry: string | null; notes: string | null;
+  verifiedOn: string; validFrom: string | null; validTo: string | null; caution: string | null; }
+export type ParticipationRules = "KNOWN" | "PARTLY_KNOWN" | "UNKNOWN";
 export interface ActivityPage {
   slug: string; title: string; category: ActivityCategory; area: ActivityArea; areaLabel: string; summary: string; description: string;
   address: string | null; officialUrl: string | null; durationMinutes: number; scheduleType: ScheduleType; weatherDependent: boolean; indoor: boolean;
   minAge: number | null; accompanimentRule: string | null; bookingNotes: string | null; priceStatus: PriceStatus; lastVerifiedOn: string | null;
   heroImage: string | null; heroImageAlt: string | null; seoTitle: string; seoDescription: string; prices: PublicPrice[];
-  extras: Array<{ label: string; amountCents: number; unit: PriceUnit; mandatory: boolean; conditions: string | null; verifiedOn: string; sourceUrl: string | null }>;
+  extras: Array<{ label: string; amountCents: number; unit: PriceUnit; mandatory: boolean; conditions: string | null; verifiedOn: string; sourceUrl: string | null; caution: string | null }>;
   hours: ActivityHoursRow[]; faqs: Array<{ question: string; answer: string }>;
   sources: Array<{ url: string; publisher: string; sourceType: SourceType; covers: string; accessedOn: string }>; updatedAt: string;
+  participationRules: ParticipationRules; participationNote: string | null;
 }
 export type CostKind = "VERIFIED" | "ASSUMPTION" | "ESTIMATE" | "UNKNOWN" | "EXCLUDED";
 export interface ItineraryCostLine { label: string; quantity: number; unitAmountCents: number | null; amountCents: number | null; kind: CostKind; detail: string | null; sourceUrl: string | null; verifiedOn: string | null; }
-export interface ItineraryStop { order: number; type: "ACTIVITY" | "LUNCH" | "RETURN"; slug: string | null; title: string; area: ActivityArea; areaLabel: string; start: string; end: string; travelMinutes: number; notes: string[]; costs: ItineraryCostLine[]; }
+export interface ItineraryStop { order: number; type: "ACTIVITY" | "LUNCH" | "RETURN"; slug: string | null; title: string; area: ActivityArea; areaLabel: string; start: string; end: string; travelMinutes: number; notes: string[]; costs: ItineraryCostLine[]; cautions: string[]; }
+export interface ItineraryConfidence { pricesConfirmed: boolean; scheduleConfirmed: boolean; suitabilityConfirmed: boolean; reasons: string[]; }
 export interface Itinerary {
   date: string; travellers: string; stops: ItineraryStop[]; transport: ItineraryCostLine[]; food: ItineraryCostLine[];
   totals: { verifiedCents: number; assumptionCents: number; estimatedCents: number; knownTotalCents: number; unknownItems: number };
   budgetCents: number | null; verdict: "WITHIN_BUDGET" | "ESTIMATED_WITHIN_BUDGET" | "OVER_BUDGET" | "CANNOT_CONFIRM" | "NO_BUDGET";
-  verdictMessage: string; assumptions: string[]; exclusions: string[]; warnings: string[]; skipped: string[];
+  verdictMessage: string; assumptions: string[]; exclusions: string[]; warnings: string[]; skipped: string[]; confidence: ItineraryConfidence;
+}
+export type AssistantMode = "LIVE" | "MOCK" | "DISABLED";
+export interface AssistantStatus { available: boolean; mode: AssistantMode; message: string | null; }
+export interface AssistantOption { id: string; label: string; itinerary: Itinerary; }
+export interface AssistantReply {
+  conversationId: string; status: "OK" | "UNAVAILABLE" | "LIMITED"; mode: AssistantMode; text: string; options: AssistantOption[];
+  details: Record<string, unknown>; missing: string[]; enquiryOptionId: string | null; enquiryReference: string | null; plannerLink: string;
+  /** The model's wording failed the figure checks and was replaced with a description built from the planner. */
+  checkedFallback: boolean;
 }

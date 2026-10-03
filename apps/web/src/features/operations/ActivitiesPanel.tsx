@@ -5,36 +5,40 @@ import { ErrorState, LoadingState } from "../../components/StateBlocks";
 import { newIdempotencyKey } from "../../lib/uuid";
 import { areaLabels, categoryLabels, residencyLabels } from "../explore/exploreLabels";
 import { centsToRand, dateTime, humanize, randToCents } from "./labels";
-import type { ActivityArea, ActivityCategory, PriceAudience, PriceStatus, PriceUnit, Residency, ScheduleType, SourceType } from "../../types/api";
+import type { ActivityArea, ActivityCategory, ParticipationRules, PriceAudience, PriceStatus, PriceUnit, Residency, ScheduleType, SourceType } from "../../types/api";
 
 interface Source { id: string; url: string; publisher: string; sourceType: SourceType; covers: string; accessedOn: string }
 interface PriceRule { label: string; audience: PriceAudience; minAge: number | null; maxAge: number | null; residency: Residency; unit: PriceUnit; amountCents: number;
   daysOfWeek: string | null; timeFrom: string | null; timeTo: string | null; conditions: string | null; estimateDefault: boolean; effectiveFrom: string | null;
-  effectiveTo: string | null; sourceId: string | null; verifiedOn: string }
-interface Extra { label: string; amountCents: number; unit: PriceUnit; mandatory: boolean; conditions: string | null; effectiveFrom: string | null; effectiveTo: string | null; sourceId: string | null; verifiedOn: string }
-interface HoursRow { seasonLabel: string | null; seasonStart: string | null; seasonEnd: string | null; daysOfWeek: string | null; opens: string; closes: string; lastEntry: string | null; notes: string | null; sourceId: string | null }
+  effectiveTo: string | null; sourceId: string | null; verifiedOn: string; uncertaintyNote: string | null; promotional: boolean }
+interface Extra { label: string; amountCents: number; unit: PriceUnit; mandatory: boolean; conditions: string | null; effectiveFrom: string | null; effectiveTo: string | null; sourceId: string | null; verifiedOn: string;
+  uncertaintyNote: string | null }
+interface HoursRow { seasonLabel: string | null; seasonStart: string | null; seasonEnd: string | null; daysOfWeek: string | null; opens: string; closes: string; lastEntry: string | null; notes: string | null; sourceId: string | null;
+  verifiedOn: string; uncertaintyNote: string | null; validFrom: string | null; validTo: string | null }
 interface AdminActivity {
   id: string; version: number; status: "DRAFT" | "PUBLISHED" | "ARCHIVED"; slug: string; title: string; category: ActivityCategory; summary: string; description: string;
   area: ActivityArea; address: string | null; officialUrl: string | null; durationMinutes: number; scheduleType: ScheduleType; weatherDependent: boolean; indoor: boolean;
   minAge: number | null; accompanimentRule: string | null; bookingNotes: string | null; priceStatus: PriceStatus; verificationNotes: string | null;
   lastVerifiedOn: string | null; verifiedBy: string | null; verificationStale: boolean; heroImage: string | null; heroImageAlt: string | null; seoTitle: string | null;
   seoDescription: string | null; publishedAt: string | null; updatedAt: string; sources: Source[]; priceRules: PriceRule[]; extras: Extra[]; hours: HoursRow[];
-  faqs: Array<{ question: string; answer: string }>; publishProblems: string[];
+  faqs: Array<{ question: string; answer: string }>; publishProblems: string[]; participationRules: ParticipationRules; participationNote: string | null;
+  recheckIssues: string[];
 }
 interface Summary { id: string; status: AdminActivity["status"]; slug: string; title: string; category: ActivityCategory; area: ActivityArea; priceStatus: PriceStatus;
-  lastVerifiedOn: string | null; verificationStale: boolean; priceRules: number; sources: number; publishProblems: string[] }
+  lastVerifiedOn: string | null; verificationStale: boolean; priceRules: number; sources: number; publishProblems: string[]; recheckIssues: string[] }
 interface Planning { version: number; roadFactor: number; averageSpeedKmh: number; bufferMinutes: number; lunchMinutes: number; updatedBy: string }
 
 const today = () => new Date().toISOString().slice(0, 10);
 const blank = (): AdminActivity => ({ id: "", version: 0, status: "DRAFT", slug: "", title: "", category: "NATURE", summary: "", description: "", area: "CITY_CENTRE",
   address: null, officialUrl: null, durationMinutes: 90, scheduleType: "OPENING_HOURS", weatherDependent: false, indoor: false, minAge: null, accompanimentRule: null,
   bookingNotes: null, priceStatus: "NOT_PUBLISHED", verificationNotes: null, lastVerifiedOn: null, verifiedBy: null, verificationStale: true, heroImage: null,
-  heroImageAlt: null, seoTitle: null, seoDescription: null, publishedAt: null, updatedAt: "", sources: [], priceRules: [], extras: [], hours: [], faqs: [], publishProblems: [] });
+  heroImageAlt: null, seoTitle: null, seoDescription: null, publishedAt: null, updatedAt: "", sources: [], priceRules: [], extras: [], hours: [], faqs: [], publishProblems: [],
+  participationRules: "KNOWN", participationNote: null, recheckIssues: [] });
 
 const api = {
   list: () => request<Summary[]>("/api/v1/admin/activities"),
   get: (id: string) => request<AdminActivity>(`/api/v1/admin/activities/${id}`),
-  save: (a: AdminActivity) => { const { id, ...body } = a; return request<AdminActivity>(`/api/v1/admin/activities${id ? `/${id}` : ""}`, { method: id ? "PUT" : "POST", body: JSON.stringify(body) }); },
+  save: (a: AdminActivity) => { const { id, recheckIssues: _recheck, ...body } = a; return request<AdminActivity>(`/api/v1/admin/activities${id ? `/${id}` : ""}`, { method: id ? "PUT" : "POST", body: JSON.stringify(body) }); },
   verify: (a: AdminActivity) => request<AdminActivity>(`/api/v1/admin/activities/${a.id}/verify`, { method: "POST", body: JSON.stringify({ version: a.version }) }),
   status: (a: AdminActivity, status: string) => request<AdminActivity>(`/api/v1/admin/activities/${a.id}/status`, { method: "POST", body: JSON.stringify({ version: a.version, status }) }),
   planning: () => request<Planning>("/api/v1/admin/planning"),
@@ -46,7 +50,8 @@ export function ActivitiesPanel() {
   const list = useQuery({ queryKey: ["admin", "activities"], queryFn: api.list, retry: false });
   return <section>
     <div className="admin-heading"><div><p className="eyebrow">Explore Cape Town</p><h1>Activities</h1>
-      <p>Every published price, opening time and extra must cite an official source and be re-checked at least every 180 days.</p></div>
+      <p>Every published price, opening time and extra must cite an official source. Session times, promotions and prices also have their own
+        re-check periods; anything overdue or unresolved is shown to visitors as unconfirmed.</p></div>
       <button className="button button-primary" onClick={() => setSelected("new")}>Add activity</button></div>
     {list.isLoading && <LoadingState label="Loading activities" />}{list.isError && <ErrorState message={list.error.message} />}
     {list.data && <div className="admin-table-wrap"><table><thead><tr><th>Activity</th><th>Category</th><th>Status</th><th>Prices</th><th>Last checked</th><th>Ready to publish</th><th></th></tr></thead><tbody>
@@ -54,7 +59,8 @@ export function ActivitiesPanel() {
         <td>{a.title}<small>/explore/{a.slug}</small></td><td>{categoryLabels[a.category]}<small>{areaLabels[a.area]}</small></td>
         <td><span className={`admin-badge ${a.status === "PUBLISHED" ? "status-active" : "status-draft"}`}>{humanize(a.status)}</span></td>
         <td>{humanize(a.priceStatus)}<small>{a.priceRules} rule(s), {a.sources} source(s)</small></td>
-        <td>{a.lastVerifiedOn ?? "Never"}{a.verificationStale && <small className="admin-warning">Needs re-checking</small>}</td>
+        <td>{a.lastVerifiedOn ?? "Never"}{a.verificationStale && <small className="admin-warning">Needs re-checking</small>}
+          {a.recheckIssues.length > 0 && <small className="admin-warning">{a.recheckIssues.length} item(s) unconfirmed</small>}</td>
         <td>{a.publishProblems.length === 0 ? "Yes" : <small className="admin-warning">{a.publishProblems.length} issue(s)</small>}</td>
         <td><button className="button button-secondary" onClick={() => setSelected(a.id)}>Open</button></td>
       </tr>)}
@@ -101,6 +107,8 @@ function ActivityEditor({ initial, onSaved, onClose }: { initial: AdminActivity;
       {a.lastVerifiedOn && <p>Last checked {a.lastVerifiedOn} by {a.verifiedBy}{a.verificationStale ? " (needs re-checking)" : ""}</p>}</div>
       <button type="button" className="button button-secondary" onClick={onClose}>Close</button></div>
     {a.id && a.publishProblems.length > 0 && <div className="admin-callout"><strong>Before publishing</strong><ul>{a.publishProblems.map(p => <li key={p}>{p}</li>)}</ul></div>}
+    {a.id && a.recheckIssues.length > 0 && <div className="admin-callout"><strong>Shown to visitors as unconfirmed</strong>
+      <ul>{a.recheckIssues.map(p => <li key={p}>{p}</li>)}</ul></div>}
 
     <h3>Basics</h3>
     <div className="form-grid admin-form-grid">
@@ -122,6 +130,10 @@ function ActivityEditor({ initial, onSaved, onClose }: { initial: AdminActivity;
         <option value="VARIES_AT_BOOKING">Set when booking</option><option value="NOT_PUBLISHED">Not published</option></select></label>
       <label className="admin-check"><input type="checkbox" checked={a.weatherDependent} onChange={e => setA({ ...a, weatherDependent: e.target.checked })} />Weather dependent</label>
       <label className="admin-check"><input type="checkbox" checked={a.indoor} onChange={e => setA({ ...a, indoor: e.target.checked })} />Indoors</label>
+      <label>Participation limits<select value={a.participationRules} onChange={field("participationRules")}>
+        <option value="KNOWN">Published (or none apply)</option><option value="PARTLY_KNOWN">Partly published</option><option value="UNKNOWN">Not published</option></select></label>
+      <label>What is not published<input maxLength={400} value={a.participationNote ?? ""} onChange={field("participationNote")}
+        required={a.participationRules !== "KNOWN"} placeholder="e.g. no minimum age or height published" /></label>
       <label className="full-field">Accompaniment or eligibility rule<input maxLength={300} value={a.accompanimentRule ?? ""} onChange={field("accompanimentRule")} /></label>
       <label className="full-field">Booking notes<input maxLength={600} value={a.bookingNotes ?? ""} onChange={field("bookingNotes")} /></label>
       <label>Image path <em className="optional">(existing /assets/ photo)</em><input maxLength={220} value={a.heroImage ?? ""} onChange={field("heroImage")} /></label>
@@ -167,12 +179,15 @@ function ActivityEditor({ initial, onSaved, onClose }: { initial: AdminActivity;
       <label>Source<select value={p.sourceId ?? ""} onChange={e => list("priceRules", i, { sourceId: e.target.value || null })}>{sourceOptions}</select></label>
       <label>Checked on<input type="date" required value={p.verifiedOn} onChange={e => list("priceRules", i, { verifiedOn: e.target.value })} /></label>
       <label className="full-field">Conditions<input maxLength={400} value={p.conditions ?? ""} onChange={e => list("priceRules", i, { conditions: e.target.value || null })} /></label>
+      <label className="full-field">Unresolved doubt <em className="optional">(e.g. official pages disagree; priced as an estimate until cleared)</em>
+        <input maxLength={400} value={p.uncertaintyNote ?? ""} onChange={e => list("priceRules", i, { uncertaintyNote: e.target.value || null })} /></label>
       <label className="admin-check"><input type="checkbox" checked={p.estimateDefault} onChange={e => list("priceRules", i, { estimateDefault: e.target.checked })} />Default</label>
+      <label className="admin-check"><input type="checkbox" checked={p.promotional} onChange={e => list("priceRules", i, { promotional: e.target.checked })} />Promotion (needs an end date)</label>
       <button type="button" className="button button-quiet" onClick={() => remove("priceRules", i)}>Remove</button>
     </div>)}
     <button type="button" className="button button-secondary" onClick={() => setA({ ...a, priceRules: [...a.priceRules, { label: "", audience: "ADULT", minAge: null, maxAge: null,
       residency: "ANY", unit: "PER_PERSON", amountCents: 0, daysOfWeek: null, timeFrom: null, timeTo: null, conditions: null, estimateDefault: true, effectiveFrom: null,
-      effectiveTo: null, sourceId: a.sources[0]?.id ?? null, verifiedOn: today() }] })}>Add price</button>
+      effectiveTo: null, sourceId: a.sources[0]?.id ?? null, verifiedOn: today(), uncertaintyNote: null, promotional: false }] })}>Add price</button>
 
     <h3>Additional costs</h3>
     {a.extras.map((x, i) => <div key={i} className="activity-row">
@@ -184,10 +199,11 @@ function ActivityEditor({ initial, onSaved, onClose }: { initial: AdminActivity;
       <label>Checked on<input type="date" required value={x.verifiedOn} onChange={e => list("extras", i, { verifiedOn: e.target.value })} /></label>
       <label className="admin-check"><input type="checkbox" checked={x.mandatory} onChange={e => list("extras", i, { mandatory: e.target.checked })} />Required</label>
       <label className="full-field">Conditions<input value={x.conditions ?? ""} onChange={e => list("extras", i, { conditions: e.target.value || null })} /></label>
+      <label className="full-field">Unresolved doubt<input maxLength={400} value={x.uncertaintyNote ?? ""} onChange={e => list("extras", i, { uncertaintyNote: e.target.value || null })} /></label>
       <button type="button" className="button button-quiet" onClick={() => remove("extras", i)}>Remove</button>
     </div>)}
     <button type="button" className="button button-secondary" onClick={() => setA({ ...a, extras: [...a.extras, { label: "", amountCents: 0, unit: "PER_VEHICLE", mandatory: false,
-      conditions: null, effectiveFrom: null, effectiveTo: null, sourceId: a.sources[0]?.id ?? null, verifiedOn: today() }] })}>Add cost</button>
+      conditions: null, effectiveFrom: null, effectiveTo: null, sourceId: a.sources[0]?.id ?? null, verifiedOn: today(), uncertaintyNote: null }] })}>Add cost</button>
 
     <h3>{a.scheduleType === "SESSIONS" ? "Sessions" : "Opening hours"}</h3>
     {a.hours.map((h, i) => <div key={i} className="activity-row">
@@ -198,11 +214,17 @@ function ActivityEditor({ initial, onSaved, onClose }: { initial: AdminActivity;
       <label>Season (MM-DD)<span className="activity-ages"><input value={h.seasonStart ?? ""} placeholder="09-01" onChange={e => list("hours", i, { seasonStart: e.target.value || null })} />
         <input value={h.seasonEnd ?? ""} placeholder="03-31" onChange={e => list("hours", i, { seasonEnd: e.target.value || null })} /></span></label>
       <label>Source<select value={h.sourceId ?? ""} onChange={e => list("hours", i, { sourceId: e.target.value || null })}>{sourceOptions}</select></label>
+      <label>Checked on<input type="date" required value={h.verifiedOn} onChange={e => list("hours", i, { verifiedOn: e.target.value })} /></label>
+      <label>Observed for <em className="optional">(sampled dates only)</em><span className="activity-ages">
+        <input type="date" aria-label="Observed from" value={h.validFrom ?? ""} onChange={e => list("hours", i, { validFrom: e.target.value || null })} />
+        <input type="date" aria-label="Observed until" value={h.validTo ?? ""} onChange={e => list("hours", i, { validTo: e.target.value || null })} /></span></label>
       <label className="full-field">Notes<input value={h.notes ?? ""} onChange={e => list("hours", i, { notes: e.target.value || null })} /></label>
+      <label className="full-field">Unresolved doubt<input maxLength={400} value={h.uncertaintyNote ?? ""} onChange={e => list("hours", i, { uncertaintyNote: e.target.value || null })} /></label>
       <button type="button" className="button button-quiet" onClick={() => remove("hours", i)}>Remove</button>
     </div>)}
     <button type="button" className="button button-secondary" onClick={() => setA({ ...a, hours: [...a.hours, { seasonLabel: null, seasonStart: null, seasonEnd: null, daysOfWeek: null,
-      opens: "09:00", closes: "17:00", lastEntry: null, notes: null, sourceId: a.sources[0]?.id ?? null }] })}>Add {a.scheduleType === "SESSIONS" ? "session" : "hours"}</button>
+      opens: "09:00", closes: "17:00", lastEntry: null, notes: null, sourceId: a.sources[0]?.id ?? null, verifiedOn: today(), uncertaintyNote: null,
+      validFrom: null, validTo: null }] })}>Add {a.scheduleType === "SESSIONS" ? "session" : "hours"}</button>
 
     <h3>Visitor questions</h3>
     <p className="form-note">Answer real visitor questions from the sources. FAQs are shown on the page; they are not marked up for search results.</p>
