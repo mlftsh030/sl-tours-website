@@ -22,5 +22,6 @@ public final class AssistantDtos {
         List<String> missing, String enquiryOptionId, String enquiryReference, String plannerLink, boolean checkedFallback) {}
     public record SubmitPlan(@NotBlank @Size(max = 4) String optionId, @NotBlank @Size(max = 160) String name,
         @NotBlank @Email @Size(max = 180) String email, @Size(max = 80) String phone, @Size(max = 800) String note,
-        @AssertTrue(message = "Confirm that you want to send this plan to SL Tours") boolean confirmed, @NotNull UUID idempotencyKey) {}
+        @AssertTrue(message = "Confirm that you want to send this plan to SL Tours") boolean confirmed, @NotNull UUID idempotencyKey,
+        @jakarta.validation.Valid com.sltours.partners.dto.PartnerDtos.ReferralInput referral) {}
 }

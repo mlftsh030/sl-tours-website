@@ -24,6 +24,7 @@ public record CreateTripPlanningRequest(
         @NotEmpty @Size(max = 20) List<@NotBlank @Size(max = 80) String> services,
         @Size(max = 1600) String notes,
         /** Optional client-generated key that turns retries into a single stored request. */
-        java.util.UUID idempotencyKey
+        java.util.UUID idempotencyKey,
+        @jakarta.validation.Valid com.sltours.partners.dto.PartnerDtos.ReferralInput referral
 ) {
 }

@@ -15,7 +15,7 @@ public class Account {
     @Column(nullable = false) private boolean enabled = true;
     @Column(nullable = false) private OffsetDateTime createdAt = OffsetDateTime.now();
     private OffsetDateTime lastLoginAt;
-    public enum Role { ADMIN, STAFF, CUSTOMER, DRIVER }
+    public enum Role { ADMIN, STAFF, CUSTOMER, DRIVER, PARTNER }
     public UUID getId() { return id; }
     public String getEmail() { return email; }
     public void setEmail(String value) { email = value; }

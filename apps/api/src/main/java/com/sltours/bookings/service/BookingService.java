@@ -22,14 +22,17 @@ public class BookingService {
     private final BookingReferenceGenerator referenceGenerator;
     private final BookingMapper bookingMapper;
     private final AccountRepository accounts;
+    private final com.sltours.partners.service.ReferralService referrals;
 
     public BookingService(
             BookingRepository bookingRepository,
             TourService tourService,
             BookingReferenceGenerator referenceGenerator,
             BookingMapper bookingMapper,
-            AccountRepository accounts
+            AccountRepository accounts,
+            com.sltours.partners.service.ReferralService referrals
     ) {
+        this.referrals = referrals;
         this.bookingRepository = bookingRepository;
         this.tourService = tourService;
         this.referenceGenerator = referenceGenerator;
@@ -71,6 +74,10 @@ public class BookingService {
         booking.setAmountPaidCents(0);
 
         Booking saved = bookingRepository.save(booking);
+        if (request.referral() != null) {
+            bookingRepository.flush();
+            referrals.attachToBooking(saved.getId(), request.referral());
+        }
         return bookingMapper.toResponse(saved, "Thanks. SL Tours will review your request and confirm availability.");
     }
 

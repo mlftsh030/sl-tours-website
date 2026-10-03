@@ -64,5 +64,7 @@ public final class ActivityDtos {
         String address, String officialUrl, int durationMinutes, ScheduleType scheduleType, boolean weatherDependent, boolean indoor,
         Integer minAge, String accompanimentRule, String bookingNotes, PriceStatus priceStatus, LocalDate lastVerifiedOn, String heroImage,
         String heroImageAlt, String seoTitle, String seoDescription, List<PublicPrice> prices, List<PublicExtra> extras, List<PublicHours> hours,
-        List<Faq> faqs, List<PublicSource> sources, OffsetDateTime updatedAt, ParticipationRules participationRules, String participationNote) {}
+        List<Faq> faqs, List<PublicSource> sources, OffsetDateTime updatedAt, ParticipationRules participationRules, String participationNote,
+        /** Shown as a commercial-relationship disclosure when the experience is supplied by an SL Tours partner. */
+        String supplierName) {}
 }

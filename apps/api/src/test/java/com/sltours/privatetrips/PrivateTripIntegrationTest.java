@@ -44,7 +44,7 @@ class PrivateTripIntegrationTest extends PostgresIntegrationTest {
     private LocalDate futureDate(int days) { return LocalDate.now().plusDays(days); }
     private PrivateTripRequest request(UUID vehicleId, LocalDate date, int minutes, int expectedTotal) {
         return new PrivateTripRequest(UUID.randomUUID(), vehicleId, date, LocalTime.of(10, 0), minutes, "Camps Bay", "Chapman's Peak\nCape Point",
-            4, "Child seat please", "Lerato M", "Lerato@Example.com", "+27 82 111 2222", expectedTotal);
+            4, "Child seat please", "Lerato M", "Lerato@Example.com", "+27 82 111 2222", expectedTotal, null);
     }
 
     private int quoteFor(Vehicle vehicle, LocalDate date) {
@@ -187,7 +187,7 @@ class PrivateTripIntegrationTest extends PostgresIntegrationTest {
         assertThatThrownBy(() -> trips.submit(request(vehicle.getId(), date, 480, 0), null)).hasMessageContaining("priced on request");
 
         var receipt = trips.requestQuote(new QuoteRequest(UUID.randomUUID(), date, LocalTime.of(8, 0), 480, "Waterfront",
-            "Full-day Winelands and Franschhoek", 30, VehicleCategory.COACH, null, "Group Lead", "group@example.com", "+27 21 000 0000"));
+            "Full-day Winelands and Franschhoek", 30, VehicleCategory.COACH, null, "Group Lead", "group@example.com", "+27 21 000 0000", null));
         var enquiry = enquiries.get(receipt.reference());
         assertThat(enquiry.source()).isEqualTo(EnquirySource.PRIVATE_TRIP_QUOTE);
         assertThat(enquiry.durationMinutes()).isEqualTo(480);

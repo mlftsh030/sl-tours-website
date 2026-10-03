@@ -45,11 +45,14 @@ public class PrivateTripService {
     private final ObjectMapper json;
     private final boolean allowSampleRates;
     private final com.sltours.shared.demo.DemoDataPolicy demo;
+    private final com.sltours.partners.service.ReferralService referrals;
 
     public PrivateTripService(AvailabilityService availability, VehicleRepository vehicles, FleetService fleet, PrivateTripRateRepository rates,
             PrivateTripFeeRepository fees, OperationsSettingsRepository settings, BookingRepository bookings, BookingReferenceGenerator references,
             PrivateTripDetailsRepository details, AccountRepository accounts, EnquiryService enquiries, ObjectMapper json,
-            @Value("${sltours.pricing.allow-sample-rates:false}") boolean allowSampleRates, com.sltours.shared.demo.DemoDataPolicy demo) {
+            @Value("${sltours.pricing.allow-sample-rates:false}") boolean allowSampleRates, com.sltours.shared.demo.DemoDataPolicy demo,
+            com.sltours.partners.service.ReferralService referrals) {
+        this.referrals = referrals;
         this.availability = availability; this.vehicles = vehicles; this.fleet = fleet; this.rates = rates; this.fees = fees;
         this.settings = settings; this.bookings = bookings; this.references = references; this.details = details; this.accounts = accounts;
         this.enquiries = enquiries; this.json = json; this.allowSampleRates = allowSampleRates; this.demo = demo;
@@ -125,6 +128,7 @@ public class PrivateTripService {
             });
         }
         bookings.saveAndFlush(booking);
+        referrals.attachToBooking(booking.getId(), request.referral());
         saveDetails(booking, vehicle, start, request.durationMinutes(), request.destination(), request.specialRequests(), rate, price);
         return receipt(booking, false);
     }
@@ -148,6 +152,7 @@ public class PrivateTripService {
         if (StringUtils.hasText(request.specialRequests())) message.append("\n").append(request.specialRequests().trim());
         enquiry.setMessage(message.toString());
         Enquiry saved = enquiries.recordPrivateTripQuote(enquiry);
+        referrals.attachToEnquiry(saved.getId(), request.referral());
         return new EnquiryReceipt(saved.getReference(), saved.getStatus(),
             "Thank you. SL Tours will price your itinerary and reply with a quote.", false);
     }

@@ -30,8 +30,11 @@ public class EnquiryService {
     private final BookingService bookingService;
     private final BookingRepository bookings;
     private final AuditService audit;
+    private final com.sltours.partners.service.ReferralService referrals;
     public EnquiryService(EnquiryRepository enquiries, EnquiryNoteRepository notes, EnquiryStatusPolicy policy,
-            TourService tours, BookingService bookingService, BookingRepository bookings, AuditService audit) {
+            TourService tours, BookingService bookingService, BookingRepository bookings, AuditService audit,
+            com.sltours.partners.service.ReferralService referrals) {
+        this.referrals = referrals;
         this.enquiries = enquiries; this.notes = notes; this.policy = policy; this.tours = tours;
         this.bookingService = bookingService; this.bookings = bookings; this.audit = audit;
     }
@@ -61,12 +64,13 @@ public class EnquiryService {
         enquiry.setPassengers(request.passengers());
         enquiry.setIdempotencyKey(request.idempotencyKey());
         Enquiry saved = store(enquiry);
+        referrals.attachToEnquiry(saved.getId(), request.referral());
         return new EnquiryReceipt(saved.getReference(), saved.getStatus(), RECEIVED_MESSAGE, false);
     }
 
     /** Trip planner submissions are also inbox enquiries; called inside the planner's transaction. */
     @Transactional
-    public Enquiry recordTripPlanner(TripPlanningRequest request, String summary, UUID idempotencyKey) {
+    public Enquiry recordTripPlanner(TripPlanningRequest request, String summary, UUID idempotencyKey, com.sltours.partners.dto.PartnerDtos.ReferralInput referral) {
         Enquiry enquiry = new Enquiry();
         enquiry.setSource(EnquirySource.TRIP_PLANNER); enquiry.setType(EnquiryType.GENERAL);
         enquiry.setReference(request.getReference());
@@ -76,12 +80,15 @@ public class EnquiryService {
         enquiry.setPassengers(Math.min(60, request.getAdults() + request.getChildren()));
         enquiry.setTripPlanningRequestId(request.getId());
         enquiry.setIdempotencyKey(idempotencyKey);
-        return enquiries.saveAndFlush(enquiry);
+        Enquiry saved = enquiries.saveAndFlush(enquiry);
+        referrals.attachToEnquiry(saved.getId(), referral);
+        return saved;
     }
 
     /** A day plan the visitor chose and confirmed in the planning assistant. Retries with the same key return the first receipt. */
     @Transactional
-    public EnquiryReceipt recordAssistantPlan(String name, String email, String phone, String summary, LocalDate date, int passengers, UUID idempotencyKey) {
+    public EnquiryReceipt recordAssistantPlan(String name, String email, String phone, String summary, LocalDate date, int passengers, UUID idempotencyKey,
+            com.sltours.partners.dto.PartnerDtos.ReferralInput referral) {
         var previous = existing(idempotencyKey);
         if (previous.isPresent()) return previous.get();
         Enquiry enquiry = new Enquiry();
@@ -92,6 +99,7 @@ public class EnquiryService {
         enquiry.setPassengers(Math.max(1, Math.min(60, passengers)));
         enquiry.setIdempotencyKey(idempotencyKey);
         Enquiry saved = store(enquiry);
+        referrals.attachToEnquiry(saved.getId(), referral);
         return new EnquiryReceipt(saved.getReference(), saved.getStatus(), RECEIVED_MESSAGE, false);
     }
 
@@ -174,6 +182,7 @@ public class EnquiryService {
         enquiry.setStatus(EnquiryStatus.CONVERTED);
         enquiry.setConvertedBookingId(booking.getId());
         enquiries.flush();
+        referrals.carryFromEnquiry(enquiry.getId(), booking.getId());
         audit.record("ENQUIRY_CONVERTED", enquiry.getReference(), "booking=" + booking.getReference());
     }
 

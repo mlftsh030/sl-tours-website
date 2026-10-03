@@ -34,6 +34,8 @@ public class Activity {
     @Column(length = 180) private String seoTitle;
     @Column(length = 300) private String seoDescription;
     private OffsetDateTime publishedAt;
+    /** Set when the entry came from an approved supplier proposal; written only by the partnership service. */
+    @Column(insertable = false, updatable = false) private UUID supplierPartnerId;
     @Enumerated(EnumType.STRING) @Column(nullable = false, length = 20) private ParticipationRules participationRules = ParticipationRules.KNOWN;
     @Column(length = 400) private String participationNote;
     @Column(nullable = false) private OffsetDateTime createdAt;
@@ -103,6 +105,7 @@ public class Activity {
     public OffsetDateTime getPublishedAt() { return publishedAt; }
     public void setPublishedAt(OffsetDateTime v) { publishedAt = v; }
     public OffsetDateTime getUpdatedAt() { return updatedAt; }
+    public UUID getSupplierPartnerId() { return supplierPartnerId; }
     public ParticipationRules getParticipationRules() { return participationRules; }
     public void setParticipationRules(ParticipationRules v) { participationRules = v; }
     public String getParticipationNote() { return participationNote; }

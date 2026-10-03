@@ -13,7 +13,7 @@ public class LoginRateLimitFilter extends OncePerRequestFilter {
     private record Window(long start, int count) {}
     private static final java.util.Set<String> LIMITED_PATHS = java.util.Set.of("/api/v1/auth/login", "/api/v1/auth/register",
         "/api/v1/enquiries", "/api/v1/trip-planning-requests", "/api/v1/private-trips/requests", "/api/v1/private-trips/quote-requests", "/api/v1/itineraries",
-        "/api/v1/assistant/conversations");
+        "/api/v1/assistant/conversations", "/api/v1/partner-applications");
     @Override protected boolean shouldNotFilter(HttpServletRequest request) {
         return !request.getMethod().equals("POST") || !LIMITED_PATHS.contains(request.getServletPath());
     }

@@ -50,6 +50,10 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/auth/csrf", "/api/v1/auth/me", "/api/v1/auth/login", "/api/v1/auth/register").permitAll()
                 .requestMatchers("/api/v1/admin/**").hasAnyRole("STAFF", "ADMIN")
                 .requestMatchers("/api/v1/driver/**").hasRole("DRIVER")
+                // Partners see only their own records; applications and referral-code lookups are public.
+                .requestMatchers("/api/v1/partner/**").hasRole("PARTNER")
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/partner-applications").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/partners/referrals/*").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/public/**", "/api/v1/private-trips/**", "/api/v1/activities", "/api/v1/activities/*",
                     "/api/v1/seo/**").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/itineraries").permitAll()

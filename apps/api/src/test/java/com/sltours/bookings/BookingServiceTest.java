@@ -45,7 +45,7 @@ class BookingServiceTest {
                 bookingRepository,
                 tourService,
                 referenceGenerator,
-                new BookingMapper(), accounts);
+                new BookingMapper(), accounts, org.mockito.Mockito.mock(com.sltours.partners.service.ReferralService.class));
     }
 
     @Test
@@ -64,7 +64,7 @@ class BookingServiceTest {
                 "+44 20 0000 0000",
                 "United Kingdom",
                 "Hotel lobby",
-                "Family trip"));
+                "Family trip", null));
 
         assertThat(response.reference()).isEqualTo("SLT-2026-ABC123");
         assertThat(response.totalAmountCents()).isEqualTo(840000);
@@ -84,7 +84,7 @@ class BookingServiceTest {
                 null,
                 null,
                 null,
-                null)))
+                null, null)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("between 2 and 6");
     }
@@ -100,7 +100,7 @@ class BookingServiceTest {
         account.setRole(com.sltours.accounts.model.Account.Role.CUSTOMER);
         when(accounts.findByEmail("real@example.com")).thenReturn(java.util.Optional.of(account));
         bookingService.createBooking(new CreateBookingRequest("cape-peninsula-journey", LocalDate.now().plusDays(3), 2,
-            "Impersonated Customer", "other@example.com", null, null, null, null), "real@example.com");
+            "Impersonated Customer", "other@example.com", null, null, null, null, null), "real@example.com");
         var captor = org.mockito.ArgumentCaptor.forClass(Booking.class);
         org.mockito.Mockito.verify(bookingRepository).save(captor.capture());
         assertThat(captor.getValue().getAccountId()).isEqualTo(account.getId());
@@ -115,7 +115,7 @@ class BookingServiceTest {
         when(referenceGenerator.nextReference(bookingRepository)).thenReturn("SLT-GUEST");
         when(bookingRepository.save(any(Booking.class))).thenAnswer(invocation -> invocation.getArgument(0));
         bookingService.createBooking(new CreateBookingRequest("cape-peninsula-journey", LocalDate.now().plusDays(3), 2,
-            "Someone", "real@example.com", null, null, null, null));
+            "Someone", "real@example.com", null, null, null, null, null));
         var captor = org.mockito.ArgumentCaptor.forClass(Booking.class);
         org.mockito.Mockito.verify(bookingRepository).save(captor.capture());
         assertThat(captor.getValue().getAccountId()).isNull();

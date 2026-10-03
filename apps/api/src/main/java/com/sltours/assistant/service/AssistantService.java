@@ -136,7 +136,7 @@ public class AssistantService {
             PlanOption option = c.options.get(request.optionId().trim().toUpperCase(Locale.ROOT));
             if (option == null) throw new ResourceNotFoundException("That option is no longer available. Ask the assistant to recalculate it.");
             var receipt = enquiries.recordAssistantPlan(request.name(), request.email(), request.phone(), enquiryText(c, option, request.note()),
-                option.itinerary().date(), c.brief.travellers(), request.idempotencyKey());
+                option.itinerary().date(), c.brief.travellers(), request.idempotencyKey(), request.referral());
             c.submittedReference = receipt.reference();
             c.proposedOptionId = null;
             return reply(c, ReplyStatus.OK, "Sent. SL Tours has received option " + option.id() + " with reference " + receipt.reference()

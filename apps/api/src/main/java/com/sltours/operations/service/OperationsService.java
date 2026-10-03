@@ -20,11 +20,13 @@ public class OperationsService {
     private final com.sltours.assignments.service.AssignmentService assignments;
     private final com.sltours.assignments.service.AdminAssignmentService attention;
     private final com.sltours.shared.demo.DemoDataPolicy demo;
+    private final com.sltours.partners.service.CommissionService commissions;
     public OperationsService(BookingRepository bookings, OperationsBookingMapper mapper,
             BookingStatusPolicy policy, AuditService audit, JdbcTemplate jdbc, com.sltours.assignments.service.AssignmentService assignments,
-            com.sltours.assignments.service.AdminAssignmentService attention, com.sltours.shared.demo.DemoDataPolicy demo) {
+            com.sltours.assignments.service.AdminAssignmentService attention, com.sltours.shared.demo.DemoDataPolicy demo,
+            com.sltours.partners.service.CommissionService commissions) {
         this.bookings = bookings; this.mapper = mapper; this.policy = policy; this.audit = audit; this.jdbc = jdbc; this.assignments = assignments;
-        this.attention = attention; this.demo = demo;
+        this.attention = attention; this.demo = demo; this.commissions = commissions;
     }
     @Transactional(readOnly = true)
     public OperationsDashboardResponse dashboard() {
@@ -64,6 +66,8 @@ public class OperationsService {
             assignments.cancelForBooking(booking, "Booking " + status.name().toLowerCase());
         booking.setStatus(status); bookings.flush();
         audit.record("BOOKING_STATUS_UPDATED", reference, previous + "->" + status);
+        // Completion may earn referral commission; a refund or cancellation reverses what remains.
+        commissions.evaluate(booking.getId(), null);
         return mapper.toResponse(booking);
     }
 }

@@ -18,6 +18,8 @@ public record CreateBookingRequest(
         @Size(max = 80) String customerPhone,
         @Size(max = 80) String customerCountry,
         @Size(max = 240) String pickupLocation,
-        @Size(max = 1200) String notes
+        @Size(max = 1200) String notes,
+        /** Optional referral from a partner link or code; see ReferralService for the attribution rules. */
+        @jakarta.validation.Valid com.sltours.partners.dto.PartnerDtos.ReferralInput referral
 ) {
 }

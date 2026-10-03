@@ -11,7 +11,14 @@ import org.springframework.stereotype.Component;
 @Component
 public class ActivityViews {
     private final CatalogueFreshness freshness;
-    public ActivityViews(CatalogueFreshness freshness) { this.freshness = freshness; }
+    private final org.springframework.jdbc.core.JdbcTemplate jdbc;
+    public ActivityViews(CatalogueFreshness freshness, org.springframework.jdbc.core.JdbcTemplate jdbc) { this.freshness = freshness; this.jdbc = jdbc; }
+
+    /** The supplier partner's business name, for the disclosure on public pages. */
+    public String supplierName(Activity a) {
+        if (a.getSupplierPartnerId() == null) return null;
+        return jdbc.query("select business_name from partners where id = ?", (rs, i) -> rs.getString(1), a.getSupplierPartnerId()).stream().findFirst().orElse(null);
+    }
     public static final ZoneId ZONE = ZoneId.of("Africa/Johannesburg");
     /** A verification older than this is flagged as stale and blocks publishing. */
     public static final int VERIFICATION_MAX_AGE_DAYS = 180;
@@ -80,7 +87,7 @@ public class ActivityViews {
             a.getAccompanimentRule(), a.getBookingNotes(), a.getPriceStatus(), a.getLastVerifiedOn(), a.getHeroImage(), a.getHeroImageAlt(),
             seoTitle(a), seoDescription(a), prices, extras, hours, a.getFaqs().stream().map(f -> new Faq(f.getQuestion(), f.getAnswer())).toList(),
             a.getSources().stream().map(s -> new PublicSource(s.getUrl(), s.getPublisher(), s.getSourceType(), s.getCovers(), s.getAccessedOn())).toList(),
-            a.getUpdatedAt(), a.getParticipationRules(), a.getParticipationNote());
+            a.getUpdatedAt(), a.getParticipationRules(), a.getParticipationNote(), supplierName(a));
     }
 
     private static String caution(String uncertainty, Optional<String> stale) {

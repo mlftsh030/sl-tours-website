@@ -40,7 +40,9 @@ import org.springframework.test.web.servlet.MockMvc;
     AdminFleetController.class, AdminAssignmentController.class, AdminPrivateTripController.class, PrivateTripController.class,
     AdminMediaController.class, PublicMediaController.class, com.sltours.siteimages.SiteImageController.class,
     com.sltours.activities.controller.ActivityController.class, com.sltours.activities.controller.AdminActivityController.class,
-    com.sltours.seo.SeoController.class, com.sltours.assistant.controller.AssistantController.class })
+    com.sltours.seo.SeoController.class, com.sltours.assistant.controller.AssistantController.class,
+    com.sltours.partners.controller.AdminPartnerController.class, com.sltours.partners.controller.PartnerPortalController.class,
+    com.sltours.partners.controller.PublicPartnerController.class, com.sltours.payments.controller.AdminBookingFinanceController.class })
 @Import(SecurityConfig.class)
 @TestPropertySource(properties = { "sltours.cors.allowed-origins=http://localhost:5173" })
 class RoleBoundarySecurityTest {
@@ -67,6 +69,13 @@ class RoleBoundarySecurityTest {
     @MockBean com.sltours.activities.service.PlanningService planningService;
     @MockBean com.sltours.seo.SeoService seoService;
     @MockBean com.sltours.assistant.service.AssistantService assistant;
+    @MockBean com.sltours.partners.service.PartnerAdminService partnerAdmin;
+    @MockBean com.sltours.partners.service.PartnerFinanceService partnerFinance;
+    @MockBean com.sltours.partners.service.SupplierProposalService supplierProposals;
+    @MockBean com.sltours.partners.service.PartnerPortalService partnerPortal;
+    @MockBean com.sltours.partners.service.PartnerApplicationService partnerApplications;
+    @MockBean com.sltours.partners.service.ReferralService referralService;
+    @MockBean com.sltours.payments.service.BookingPaymentService bookingPayments;
 
     private static final UUID ID = UUID.randomUUID();
     private static final String REVIEW = "{\"version\":0,\"notes\":\"ok\"}";
@@ -203,5 +212,33 @@ class RoleBoundarySecurityTest {
             org.mockito.ArgumentMatchers.any());
         mvc.perform(delete("/api/v1/assistant/conversations/abc").with(csrf())).andExpect(status().isNoContent());
         mvc.perform(get("/api/v1/admin/enquiries")).andExpect(status().isUnauthorized());
+    }
+
+    @Test void partnerRecordsAreForPartnersAndMoneyAndPartnerAdministrationAreForAdministrators() throws Exception {
+        for (var other : List.of(user("customer@test.local").roles("CUSTOMER"), user("driver@test.local").roles("DRIVER"), user("staff").roles("STAFF"),
+                user("admin").roles("ADMIN"))) {
+            mvc.perform(get("/api/v1/partner/me").with(other)).andExpect(status().isForbidden());
+            mvc.perform(get("/api/v1/partner/referrals").with(other)).andExpect(status().isForbidden());
+        }
+        mvc.perform(get("/api/v1/partner/statement")).andExpect(status().isUnauthorized());
+        var partner = user("partner@test.local").roles("PARTNER");
+        mvc.perform(get("/api/v1/admin/partners").with(partner)).andExpect(status().isForbidden());
+        mvc.perform(get("/api/v1/admin/bookings/SLT-2026-AAAAAA/finance").with(partner)).andExpect(status().isForbidden());
+        mvc.perform(get("/api/v1/operations/bookings").with(partner)).andExpect(status().isForbidden());
+        // Staff can view a booking's finances but cannot record money, change attribution or administer partners.
+        var staff = user("staff").roles("STAFF");
+        mvc.perform(get("/api/v1/admin/bookings/SLT-2026-AAAAAA/finance").with(staff)).andExpect(status().isOk());
+        mvc.perform(post("/api/v1/admin/bookings/SLT-2026-AAAAAA/payments").with(staff).with(csrf()).contentType(MediaType.APPLICATION_JSON)
+            .content("{\"idempotencyKey\":\"" + ID + "\",\"kind\":\"PAYMENT\",\"amountCents\":100,\"method\":\"EFT\",\"externalReference\":\"X\",\"receivedOn\":\"2026-10-03\"}"))
+            .andExpect(status().isForbidden());
+        mvc.perform(put("/api/v1/admin/bookings/SLT-2026-AAAAAA/referral").with(staff).with(csrf()).contentType(MediaType.APPLICATION_JSON)
+            .content("{\"partnerId\":null,\"reason\":\"x\"}")).andExpect(status().isForbidden());
+        mvc.perform(get("/api/v1/admin/partners").with(staff)).andExpect(status().isForbidden());
+        mvc.perform(get("/api/v1/admin/partners").with(user("admin").roles("ADMIN"))).andExpect(status().isOk());
+        // Applications are public but CSRF-protected; referral lookups are public reads.
+        mvc.perform(post("/api/v1/partner-applications").contentType(MediaType.APPLICATION_JSON).content("{}")).andExpect(status().isForbidden());
+        mvc.perform(post("/api/v1/partner-applications").with(csrf()).contentType(MediaType.APPLICATION_JSON).content("{}")).andExpect(status().isBadRequest());
+        org.mockito.Mockito.when(referralService.lookup("ABCD2345")).thenReturn(Optional.of(new com.sltours.partners.dto.PartnerDtos.ReferralLookup("ABCD2345", "Hotel")));
+        mvc.perform(get("/api/v1/partners/referrals/ABCD2345")).andExpect(status().isOk()).andExpect(jsonPath("$.partnerName").value("Hotel"));
     }
 }

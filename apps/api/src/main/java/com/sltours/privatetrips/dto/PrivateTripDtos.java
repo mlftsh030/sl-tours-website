@@ -27,12 +27,14 @@ public final class PrivateTripDtos {
         @Min(60) @Max(1440) int durationMinutes, @NotBlank @Size(max = 240) String pickupLocation,
         @NotBlank @Size(max = 1200) String destination, @Min(1) @Max(80) int passengers, @Size(max = 1200) String specialRequests,
         @NotBlank @Size(max = 160) String customerName, @NotBlank @Email @Size(max = 180) String customerEmail,
-        @NotBlank @Size(max = 80) String customerPhone, @NotNull @Min(0) Integer expectedTotalCents) {}
+        @NotBlank @Size(max = 80) String customerPhone, @NotNull @Min(0) Integer expectedTotalCents,
+        @jakarta.validation.Valid com.sltours.partners.dto.PartnerDtos.ReferralInput referral) {}
     public record QuoteRequest(@NotNull UUID idempotencyKey, @NotNull @FutureOrPresent LocalDate date, LocalTime startTime,
         @Min(60) @Max(1440) Integer durationMinutes, @NotBlank @Size(max = 240) String pickupLocation,
         @NotBlank @Size(max = 1200) String destination, @Min(1) @Max(80) int passengers, VehicleCategory preferredCategory,
         @Size(max = 1200) String specialRequests, @NotBlank @Size(max = 160) String customerName,
-        @NotBlank @Email @Size(max = 180) String customerEmail, @Size(max = 80) String customerPhone) {}
+        @NotBlank @Email @Size(max = 180) String customerEmail, @Size(max = 80) String customerPhone,
+        @jakarta.validation.Valid com.sltours.partners.dto.PartnerDtos.ReferralInput referral) {}
     public record PrivateTripReceipt(String reference, BookingStatus status, String message, PriceQuote quote, OffsetDateTime startsAt,
         OffsetDateTime endsAt, String vehicleName, boolean duplicate) {}
 

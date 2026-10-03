@@ -49,7 +49,7 @@ public class TripPlanningService {
         entity.setStatus(TripPlanningStatus.NEW);
 
         TripPlanningRequest saved = repository.saveAndFlush(entity);
-        enquiries.recordTripPlanner(saved, summary(saved), request.idempotencyKey());
+        enquiries.recordTripPlanner(saved, summary(saved), request.idempotencyKey(), request.referral());
         return new TripPlanningResponse(saved.getReference(), TripPlanningStatus.NEW, RECEIVED);
     }
 

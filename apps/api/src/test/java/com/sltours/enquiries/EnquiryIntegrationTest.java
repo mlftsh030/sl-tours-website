@@ -25,7 +25,7 @@ class EnquiryIntegrationTest extends PostgresIntegrationTest {
     private CreateEnquiryRequest contact(UUID key) {
         return new CreateEnquiryRequest(key, "Thandi Nkosi", "Thandi@Example.com ", "+27 82 000 0000",
             "We would like a private trip to Cape Point.", EnquiryType.TOUR, "cape-peninsula-journey",
-            LocalDate.now().plusDays(10), "V&A Waterfront", 4);
+            LocalDate.now().plusDays(10), "V&A Waterfront", 4, null);
     }
 
     @Test void enquiryIsStoredBeforeTheReceiptAndRetriesDoNotDuplicate() {
@@ -75,7 +75,7 @@ class EnquiryIntegrationTest extends PostgresIntegrationTest {
     @Test void tripPlannerRequestsAppearInTheInboxAndExistingOnesWereBackfilled() {
         UUID key = UUID.randomUUID();
         var request = new CreateTripPlanningRequest("Planner Guest", "planner@example.com", null, LocalDate.now().plusDays(20),
-            LocalDate.now().plusDays(25), 2, 1, "family", List.of("nature"), List.of("tours"), "Penguins please", key);
+            LocalDate.now().plusDays(25), 2, 1, "family", List.of("nature"), List.of("tours"), "Penguins please", key, null);
         var response = planner.createRequest(request);
         assertThat(planner.createRequest(request).reference()).isEqualTo(response.reference());
         EnquiryDetail detail = enquiries.get(response.reference());

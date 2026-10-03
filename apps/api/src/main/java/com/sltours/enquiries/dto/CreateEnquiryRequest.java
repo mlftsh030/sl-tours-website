@@ -14,5 +14,6 @@ public record CreateEnquiryRequest(
     @Size(max = 160) String tourSlug,
     @FutureOrPresent LocalDate requestedDate,
     @Size(max = 240) String pickupLocation,
-    @Min(1) @Max(60) Integer passengers
+    @Min(1) @Max(60) Integer passengers,
+    @jakarta.validation.Valid com.sltours.partners.dto.PartnerDtos.ReferralInput referral
 ) {}

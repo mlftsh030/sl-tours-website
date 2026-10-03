@@ -85,6 +85,8 @@ class ActivityCatalogueIntegrationTest extends PostgresIntegrationTest {
     @Test void privateAndUnknownPagesAreNotIndexedAndOutputIsEscaped() {
         assertThat(seo.head("/operations/bookings")).contains("noindex").doesNotContain("canonical");
         assertThat(seo.head("/book/cape-point-tour")).contains("noindex");
+        assertThat(seo.head("/partner/referrals")).contains("noindex");
+        assertThat(seo.head("/partner-with-us")).contains("<title>Partner with SL Tours", "rel=\"canonical\"").doesNotContain("noindex");
         assertThat(seo.head("/nope\"><script>")).contains("noindex").doesNotContain("<script>alert");
         assertThat(seo.head("/")).contains("\"@type\":\"TravelAgency\"").doesNotContain("makesOffer");
         assertThat(seo.sitemap()).contains("https://sl-tours.com/explore</loc>", "/experiences/cape-peninsula-journey");

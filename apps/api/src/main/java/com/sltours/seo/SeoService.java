@@ -35,18 +35,23 @@ public class SeoService {
             "SL Tours is a proudly Black-owned, Cape Town-based travel company run by professional tourist guide Lisolethu Nkcaza.", "About SL Tours"});
         STATIC.put("/contact", new String[]{"Contact SL Tours | Book Tours & Transfers in Cape Town",
             "Call, email, or WhatsApp SL Tours to book Cape Town tours, private trips, and airport transfers.", "Contact SL Tours"});
+        STATIC.put("/partner-with-us", new String[]{"Partner with SL Tours | Referral Partners and Experience Suppliers",
+            "Hotels, guesthouses, concierges and travel agents can refer guests to SL Tours. Safari operators, activity providers and guides can propose experiences.",
+            "Partner with SL Tours"});
         STATIC.put("/explore", new String[]{"Explore Cape Town | Activities, Prices and Opening Hours | SL Tours",
             "Things to do in Cape Town, from Table Mountain and Boulders Beach to ice skating and go-karting, with prices and hours checked against official sources.", "Explore Cape Town"});
         STATIC.put("/explore/plan", new String[]{"Plan a Day in Cape Town | SL Tours",
             "Build a practical day plan with opening times, travel between areas and transparent admission, transport and food costs.", "Plan a day in Cape Town"});
     }
-    private static final List<String> PRIVATE_PREFIXES = List.of("/operations", "/driver", "/login", "/register", "/account", "/my-trip", "/book/");
+    private static final List<String> PRIVATE_PREFIXES = List.of("/operations", "/driver", "/partner", "/login", "/register", "/account", "/my-trip", "/book/");
 
     private final ActivityRepository activities;
     private final TourRepository tours;
     private final String baseUrl;
-    public SeoService(ActivityRepository activities, TourRepository tours, @Value("${sltours.public-base-url:https://sl-tours.com}") String baseUrl) {
-        this.activities = activities; this.tours = tours; this.baseUrl = baseUrl.replaceAll("/+$", "");
+    private final com.sltours.activities.service.ActivityViews views;
+    public SeoService(ActivityRepository activities, TourRepository tours, @Value("${sltours.public-base-url:https://sl-tours.com}") String baseUrl,
+            com.sltours.activities.service.ActivityViews views) {
+        this.activities = activities; this.tours = tours; this.baseUrl = baseUrl.replaceAll("/+$", ""); this.views = views;
     }
 
     @Transactional(readOnly = true)
@@ -141,6 +146,8 @@ public class SeoService {
             b.append("</ul>");
         }
         if (a.getParticipationNote() != null) b.append("<p>").append(esc(a.getParticipationNote())).append("</p>");
+        String supplier = views.supplierName(a);
+        if (supplier != null) b.append("<p>").append(esc(disclosure(supplier))).append("</p>");
         if (a.getLastVerifiedOn() != null) b.append("<p>Information checked against official sources on ").append(a.getLastVerifiedOn()).append(".</p>");
         if (!a.getFaqs().isEmpty()) {
             b.append("<h2>Questions</h2><dl>");
@@ -207,5 +214,10 @@ public class SeoService {
             case '\t' -> out.append("\\t"); case '<' -> out.append("\\u003c"); default -> { if (c < 0x20) out.append(String.format("\\u%04x", (int) c)); else out.append(c); }
         }
         return out.append('"').toString();
+    }
+
+    /** The same commercial-relationship wording as the activity page. */
+    public static String disclosure(String supplier) {
+        return "This experience is provided by " + supplier + ", an SL Tours supplier partner. SL Tours has a commercial relationship with this supplier.";
     }
 }

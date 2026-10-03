@@ -80,18 +80,18 @@ class PlanningAssistantIntegrationTest extends PostgresIntegrationTest {
         assertThat(offered.text()).contains("Nothing is sent until you confirm");
         assertThat(assistantEnquiries()).isEqualTo(before);
         UUID key = UUID.randomUUID();
-        assertThatThrownBy(() -> assistant.submit(id, "session-1", new SubmitPlan("A", "Test Visitor", "visitor@example.com", null, null, false, key)))
+        assertThatThrownBy(() -> assistant.submit(id, "session-1", new SubmitPlan("A", "Test Visitor", "visitor@example.com", null, null, false, key, null)))
             .hasMessageContaining("Confirm");
         assertThat(assistantEnquiries()).isEqualTo(before);
-        assertThatThrownBy(() -> assistant.submit(id, "other-session", new SubmitPlan("A", "Test Visitor", "visitor@example.com", null, null, true, key)))
+        assertThatThrownBy(() -> assistant.submit(id, "other-session", new SubmitPlan("A", "Test Visitor", "visitor@example.com", null, null, true, key, null)))
             .hasMessageContaining("conversation has ended");
 
-        Reply sent = assistant.submit(id, "session-1", new SubmitPlan("A", "Test Visitor", "Visitor@Example.com", "+27 21 000 0000", "Vegetarian lunch please", true, key));
+        Reply sent = assistant.submit(id, "session-1", new SubmitPlan("A", "Test Visitor", "Visitor@Example.com", "+27 21 000 0000", "Vegetarian lunch please", true, key, null));
         assertThat(sent.enquiryReference()).startsWith("SLE");
         assertThat(assistantEnquiries()).isEqualTo(before + 1);
         String message = jdbc.queryForObject("select message from enquiries where reference = ?", String.class, sent.enquiryReference());
         assertThat(message).contains("option A", "Known costs:", "nothing has been booked or confirmed", "Vegetarian lunch please");
-        Reply again = assistant.submit(id, "session-1", new SubmitPlan("A", "Test Visitor", "visitor@example.com", null, null, true, UUID.randomUUID()));
+        Reply again = assistant.submit(id, "session-1", new SubmitPlan("A", "Test Visitor", "visitor@example.com", null, null, true, UUID.randomUUID(), null));
         assertThat(again.enquiryReference()).isEqualTo(sent.enquiryReference());
         assertThat(assistantEnquiries()).isEqualTo(before + 1);
     }
