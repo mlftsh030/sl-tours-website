@@ -37,8 +37,23 @@ Migration V9 adds PostgreSQL exclusion constraints that prevent double-booking v
   `sltours.pricing.allow-sample-rates` is enabled outside `dev`/`test`. Demo driver sign-ins exist only in the `dev` profile.
 - `docker-compose.yml` defaults to the `dev` profile for local use; set the variables above for any shared deployment.
 - Mount the `media-data` volume and back it up with the database ([Media Storage](MEDIA_STORAGE.md)).
-- Migration V2 (from before this work) inserts demo catalogue/booking/driver/vehicle rows in every environment. Review or
-  remove them for production; they include no sign-in accounts, and the demo vehicles stay hidden from the website.
+- Migration V2 inserts sample bookings, people and vehicles in every environment. V12 flags them and production
+  excludes them from inventory and reporting; see [Development Sample Data](DEVELOPMENT_SEED_DATA.md) for removal.
+
+## Turnaround changes and existing assignments
+
+The turnaround (Private-trip rates → Rules) is stored on each assignment when it is created or changed, as
+`blocked_until = end + turnaround`. Changing the setting:
+
+- applies to new assignments, to private-trip availability searches, and to any assignment whose vehicle or driver is
+  changed afterwards (its window is recalculated with the current setting);
+- does **not** rewrite existing assignments, so they keep the buffer they were confirmed with. Increasing the
+  turnaround can therefore leave two existing trips closer together than the new setting; reducing it frees time only
+  for new bookings;
+- is audited (`PRICING_SETTINGS_UPDATED`).
+
+To apply a new turnaround to an existing trip, change its vehicle or driver from **Trips & inspections**; the window is
+recalculated and the usual overlap checks run with the new buffer.
 
 ## Required Production Work
 
