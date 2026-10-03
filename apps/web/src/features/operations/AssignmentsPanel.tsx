@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ErrorState, LoadingState } from "../../components/StateBlocks";
-import { cancelAssignment, changeAssignment, compareInspections, listAssignments, pendingInspections, resourceOptions, reviewInspection } from "./fleetApi";
+import { assignmentsNeedingAttention, cancelAssignment, changeAssignment, compareInspections, listAssignments, pendingInspections, resourceOptions, reviewInspection } from "./fleetApi";
 import { assignmentStatusLabels, dateTime, fuelLabels, humanize } from "./labels";
 import type { AdminAssignment, InspectionView, ResourceOptions } from "../../types/api";
 
@@ -12,12 +13,30 @@ const stateLabels: Record<string, string> = {
 export function AssignmentsPanel({ isAdmin }: { isAdmin: boolean }) {
   const [scope, setScope] = useState<"active" | "recent">("active");
   const [selected, setSelected] = useState<AdminAssignment | null>(null);
+  const [params, setParams] = useSearchParams();
   const pending = useQuery({ queryKey: ["admin", "inspections", "pending"], queryFn: pendingInspections, retry: false });
+  const attention = useQuery({ queryKey: ["admin", "assignments", "attention"], queryFn: assignmentsNeedingAttention, retry: false });
   const assignments = useQuery({ queryKey: ["admin", "assignments", scope], queryFn: () => listAssignments(scope), retry: false });
-  const open = (assignmentId: string) => { const match = assignments.data?.find(a => a.id === assignmentId); if (match) setSelected(match); };
+  const open = (assignmentId: string) => {
+    const match = assignments.data?.find(a => a.id === assignmentId) ?? attention.data?.find(a => a.id === assignmentId);
+    if (match) setSelected(match);
+  };
+  // Links from vehicle and driver screens open a specific assignment.
+  const requested = params.get("assignment");
+  useEffect(() => {
+    if (requested && assignments.data) { open(requested); setParams({}, { replace: true }); }
+  }, [requested, assignments.data]);
   return <section>
     <div className="admin-heading"><div><p className="eyebrow">Operations</p><h1>Trips &amp; inspections</h1>
       <p>Vehicle and driver assignments with their collection and return inspections.</p></div></div>
+    {attention.data && attention.data.length > 0 && <>
+      <h2 className="admin-subheading">Needs attention</h2>
+      <div className="admin-review-list">{attention.data.map(a => <button key={a.id} className="admin-review-item is-safety" onClick={() => setSelected(a)}>
+        <strong>{dateTime(a.startsAt)} · {a.title} · {a.bookingReference}</strong>
+        <span>{a.vehicleName} · {a.driverName}</span>
+        {a.problems.map(p => <span key={p} className="admin-warning">{p}</span>)}
+      </button>)}</div>
+    </>}
     <h2 className="admin-subheading">Awaiting review</h2>
     {pending.isLoading && <LoadingState label="Loading inspections" />}{pending.isError && <ErrorState message={pending.error.message} />}
     {pending.data && (pending.data.length ? <div className="admin-review-list">{pending.data.map(p => <button key={p.inspectionId} className={`admin-review-item${p.hasSafetyDefect ? " is-safety" : ""}`} onClick={() => open(p.assignmentId)}>
@@ -49,6 +68,8 @@ function AssignmentDetail({ assignment, isAdmin, onClose }: { assignment: AdminA
     <div className="admin-heading"><div><p className="eyebrow">{assignment.bookingReference}</p><h2>{assignment.title}</h2>
       <p>{dateTime(assignment.startsAt)} – {dateTime(assignment.endsAt)} · {assignment.vehicleName} ({assignment.registration}) · {assignment.driverName}</p></div>
       <button className="button button-secondary" onClick={onClose}>Close</button></div>
+    {assignment.problems.length > 0 && <div className="admin-callout" role="alert"><strong>This trip cannot go ahead as planned</strong>
+      <ul>{assignment.problems.map(p => <li key={p}>{p}</li>)}</ul>{isAdmin && <p>Choose another vehicle or driver below.</p>}</div>}
     {comparison.isLoading && <LoadingState label="Loading inspections" />}{comparison.isError && <ErrorState message={comparison.error.message} />}
     {c && <>
       {c.collection && c.returned && <div className="admin-metrics admin-compare-metrics">
@@ -121,10 +142,15 @@ function ChangeAssignment({ assignment }: { assignment: AdminAssignment }) {
   const change = useMutation({ mutationFn: () => changeAssignment(assignment.id, assignment.version, vehicleId, driverId), onSuccess: done });
   const cancel = useMutation({ mutationFn: () => cancelAssignment(assignment.id, assignment.version, reason), onSuccess: done });
   if (!options.data) return null;
-  // The current vehicle and driver are busy with this very assignment, so keep them selectable.
+  // The current vehicle and driver are "already assigned" to this very trip; ignore only that reason.
+  const ownBooking = (o: ResourceOptions["vehicles"][number], current: string | null) => {
+    if (o.id !== current) return o;
+    const reasons = o.reasons.filter(r => !r.startsWith("Already assigned"));
+    return { ...o, reasons, available: reasons.length === 0 };
+  };
   const withCurrent: ResourceOptions = { ...options.data,
-    vehicles: options.data.vehicles.map(v => v.id === assignment.vehicleId ? { ...v, available: true, reasons: [] } : v),
-    drivers: options.data.drivers.map(d => d.id === assignment.driverId ? { ...d, available: true, reasons: [] } : d) };
+    vehicles: options.data.vehicles.map(v => ownBooking(v, assignment.vehicleId)),
+    drivers: options.data.drivers.map(d => ownBooking(d, assignment.driverId)) };
   return <div className="admin-convert"><h3>Change vehicle or driver</h3>
     <p className="form-note">Changing either rejects any collection inspection made for the previous vehicle or driver.</p>
     <ResourcePicker options={withCurrent} vehicleId={vehicleId} driverId={driverId} onVehicle={setVehicleId} onDriver={setDriverId} />
@@ -135,5 +161,21 @@ function ChangeAssignment({ assignment }: { assignment: AdminAssignment }) {
       <button className="button button-quiet" type="submit" disabled={cancel.isPending}>Cancel assignment</button>
     </form>
     {cancel.isError && <ErrorState message={cancel.error.message} />}
+  </div>;
+}
+
+/** Upcoming trips for a vehicle or driver; trips the latest change has put at risk are highlighted. */
+export function UpcomingTrips({ trips, subject }: { trips: AdminAssignment[]; subject: string }) {
+  const affected = trips.filter(t => t.problems.length > 0);
+  return <div className="admin-upcoming">
+    <h3>Upcoming trips</h3>
+    {affected.length > 0 && <div className="admin-callout" role="alert"><strong>{affected.length} upcoming {affected.length === 1 ? "trip is" : "trips are"} affected</strong>
+      <p>Reassign {affected.length === 1 ? "it" : "them"} before the trip date. The usual availability, restriction and eligibility checks apply.</p></div>}
+    {trips.length === 0 ? <p className="form-note">No upcoming trips use this {subject}.</p> : <ul className="admin-upcoming-list">{trips.map(t =>
+      <li key={t.id} className={t.problems.length ? "is-affected" : ""}>
+        <div><strong>{dateTime(t.startsAt)}</strong> · {t.title} <small>{t.bookingReference} · {t.vehicleName} · {t.driverName}</small>
+          {t.problems.map(p => <small key={p} className="admin-warning">{p}</small>)}</div>
+        <Link className="button button-secondary" to={`/operations/trips?assignment=${t.id}`}>{t.problems.length ? "Reassign" : "Open"}</Link>
+      </li>)}</ul>}
   </div>;
 }

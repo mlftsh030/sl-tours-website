@@ -33,7 +33,7 @@ export function EnquiriesPanel() {
     {data.data && <><div className="admin-table-wrap"><table><thead><tr><th>Received</th><th>Customer</th><th>Request</th><th>Message</th><th>Status</th><th>Details</th></tr></thead><tbody>
       {data.data.content.map(enquiry => <tr key={enquiry.reference}>
         <td>{dateTime(enquiry.createdAt)}<small>{enquiry.reference}</small></td>
-        <td>{enquiry.customerName}<small>{enquiry.customerEmail}</small>{enquiry.customerPhone && <small>{enquiry.customerPhone}</small>}</td>
+        <td>{enquiry.customerName}{enquiry.demoData && <span className="admin-badge sample-badge">Sample data</span>}<small>{enquiry.customerEmail}</small>{enquiry.customerPhone && <small>{enquiry.customerPhone}</small>}</td>
         <td>{enquiry.tourTitle ?? humanize(enquiry.type)}<small>{[enquiry.requestedDate, enquiry.passengers && `${enquiry.passengers} pax`].filter(Boolean).join(" · ") || enquirySourceLabels[enquiry.source]}</small></td>
         <td className="admin-message-cell">{enquiry.messagePreview}</td>
         <td><span className={`admin-badge enquiry-${enquiry.status.toLowerCase()}`}>{enquiryStatusLabels[enquiry.status]}</span></td>

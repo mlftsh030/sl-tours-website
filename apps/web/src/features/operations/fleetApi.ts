@@ -37,6 +37,9 @@ export const uploadDriverDocument = (id: string, type: string, expiresOn: string
 export const reviewDriverDocument = (id: string, documentId: string, version: number, status: string, notes: string) =>
   request<DriverDetail>(`/api/v1/admin/drivers/${id}/documents/${documentId}`, json("PATCH", { version, status, notes }));
 
+export const markVehicleGenuine = (id: string) => request<VehicleDetail>(`/api/v1/admin/vehicles/${id}/genuine`, { method: "POST" });
+export const markDriverGenuine = (id: string) => request<DriverDetail>(`/api/v1/admin/drivers/${id}/genuine`, { method: "POST" });
+export const assignmentsNeedingAttention = () => request<AdminAssignment[]>("/api/v1/admin/assignments/attention");
 export const listAssignments = (scope: "active" | "recent") => request<AdminAssignment[]>(`/api/v1/admin/assignments?scope=${scope}`);
 export const resourceOptions = (startsAt: string, endsAt: string, passengers: number) =>
   request<ResourceOptions>(`/api/v1/admin/assignments/options?${new URLSearchParams({ startsAt, endsAt, passengers: String(passengers) })}`);

@@ -2,10 +2,12 @@ import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ErrorState, LoadingState } from "../../components/StateBlocks";
 import {
-  createDriver, createDriverAccount, getDriver, listDrivers, reviewDriverDocument, setDriverAccountEnabled, setDriverVerification,
+  createDriver, createDriverAccount, markDriverGenuine, getDriver, listDrivers, reviewDriverDocument, setDriverAccountEnabled, setDriverVerification,
   updateDriver, uploadDriverDocument
 } from "./fleetApi";
 import { dateTime, humanize } from "./labels";
+import { UpcomingTrips } from "./AssignmentsPanel";
+import { SampleNotice } from "./VehiclesPanel";
 import type { DriverDetail, DriverDocument } from "../../types/api";
 
 const documentTypes = { DRIVING_LICENCE: "Driving licence", PRDP: "Professional Driving Permit (PrDP)", IDENTITY_DOCUMENT: "Identity document", OTHER: "Other" };
@@ -20,7 +22,7 @@ export function DriversPanel() {
     {drivers.isLoading && <LoadingState label="Loading drivers" />}{drivers.isError && <ErrorState message={drivers.error.message} />}
     {drivers.data && <div className="admin-table-wrap"><table><thead><tr><th>Driver</th><th>Sign-in</th><th>Verification</th><th>Licence / PrDP</th><th>Eligible today</th><th>Details</th></tr></thead><tbody>
       {drivers.data.map(d => <tr key={d.id}>
-        <td>{d.name}<small>{d.contact}</small></td>
+        <td>{d.name}<small>{d.contact}</small>{d.demoData && <span className="admin-badge sample-badge">Sample data</span>}</td>
         <td>{d.email ?? <span className="admin-badge">No account</span>}{d.email && !d.accountEnabled && <span className="admin-badge status-draft">Disabled</span>}</td>
         <td><span className={`admin-badge verification-${d.verificationStatus.toLowerCase()}`}>{humanize(d.verificationStatus)}</span>
           {d.documentsAwaitingReview > 0 && <small>{d.documentsAwaitingReview} document(s) to review</small>}</td>
@@ -79,8 +81,10 @@ function DriverView({ id, onClose }: { id: string; onClose: () => void }) {
   }
   return <section className="form-surface admin-detail" aria-label="Driver details">
     <div className="admin-heading"><div><p className="eyebrow">Driver</p><h2>{d.name}</h2></div><button className="button button-secondary" onClick={onClose}>Close</button></div>
+    {d.demoData && <SampleNotice isAdmin onConfirm={() => markDriverGenuine(id)} queryKey={["admin", "driver", id]} subject="driver" />}
     {d.eligibilityProblems.length > 0 ? <div className="admin-callout"><strong>Not eligible today</strong><ul>{d.eligibilityProblems.map(p => <li key={p}>{p}</li>)}</ul></div>
       : <p className="admin-ok">Eligible to drive today.</p>}
+    <UpcomingTrips trips={d.upcomingAssignments} subject="driver" />
     <h3>Sign-in</h3>
     {d.email ? <div className="admin-inline-form"><span>{d.email} · {d.accountEnabled ? "enabled" : "disabled"}</span>
       <button className="button button-secondary" onClick={() => account.mutate(!d.accountEnabled)} disabled={account.isPending}>{d.accountEnabled ? "Disable sign-in" : "Enable sign-in"}</button></div>

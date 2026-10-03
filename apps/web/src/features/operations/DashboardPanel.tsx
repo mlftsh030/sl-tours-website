@@ -11,7 +11,7 @@ export function DashboardPanel() {
     {data.data && <div className="admin-metrics">{[
       ["New enquiries", data.data.newEnquiries], ["Bookings today", data.data.bookingsToday], ["New booking requests", data.data.enquiries],
       ["Awaiting payment", data.data.awaitingPayment], ["Confirmed bookings", data.data.confirmedBookings],
-      ["Private-trip requests", data.data.privateTripRequests], ["Inspections to review", data.data.inspectionsAwaitingReview],
+      ["Trips needing attention", data.data.tripsNeedingAttention], ["Private-trip requests", data.data.privateTripRequests], ["Inspections to review", data.data.inspectionsAwaitingReview],
       ["Vehicles restricted", data.data.openVehicleRestrictions], ["Vehicles in service", data.data.activeVehicles],
       ["Booking value", formatMoney(data.data.revenueCents)]
     ].map(([label, value]) => <article className="admin-metric" key={label}><span>{label}</span><strong>{value}</strong></article>)}</div>}

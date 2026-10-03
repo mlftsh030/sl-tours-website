@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Camera, CheckCircle2, TriangleAlert } from "lucide-react";
 import { ErrorState, LoadingState } from "../../components/StateBlocks";
@@ -9,15 +9,20 @@ const fuelLevels: Array<[FuelLevel, string]> = [["EMPTY", "Empty"], ["QUARTER", 
 const angles = ["Front", "Rear", "Left side", "Right side"];
 
 function Preview({ file }: { file: File }) {
-  const url = useMemo(() => URL.createObjectURL(file), [file]);
-  useEffect(() => () => URL.revokeObjectURL(url), [url]);
-  return <img src={url} alt="" className="driver-thumb" />;
+  // Created and revoked in the same effect, so a re-run (e.g. React strict mode) never leaves a revoked URL.
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    const next = URL.createObjectURL(file);
+    setUrl(next);
+    return () => URL.revokeObjectURL(next);
+  }, [file]);
+  return url ? <img src={url} alt="" className="driver-thumb" /> : null;
 }
 
 function PhotoInput({ label, file, onChange, capture = "environment" }: { label: string; file: File | null; onChange: (f: File | null) => void; capture?: "user" | "environment" }) {
   return <label className={`driver-photo-input${file ? " has-photo" : ""}`}>
     {file ? <Preview file={file} /> : <Camera aria-hidden="true" />}
-    <span>{file ? `Retake ${label.toLowerCase()}` : label}</span>
+    <span>{file ? `Retake: ${label.toLowerCase()}` : label}</span>
     <input type="file" accept="image/jpeg,image/png,image/webp" capture={capture} onChange={event => onChange(event.target.files?.[0] ?? null)} />
   </label>;
 }
@@ -97,7 +102,7 @@ export function InspectionForm({ assignmentId, kind, minimumPhotos, collectionOd
     </fieldset>
     {kind === "collection" && <fieldset className="driver-section"><legend>Collection selfie</legend>
       <p className="driver-hint">Take a fresh selfie with the vehicle. It is kept as an accountability record only; no face recognition is used.</p>
-      <PhotoInput label="Take selfie" file={selfie} onChange={setSelfie} capture="user" />
+      <PhotoInput label="Selfie" file={selfie} onChange={setSelfie} capture="user" />
     </fieldset>}
     <fieldset className="driver-section"><legend>Readings</legend>
       <label>Odometer (km){collectionOdometer != null && <small> At collection: {collectionOdometer.toLocaleString("en-ZA")} km</small>}

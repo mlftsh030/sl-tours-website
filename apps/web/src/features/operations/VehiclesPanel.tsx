@@ -2,7 +2,8 @@ import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ErrorState, LoadingState } from "../../components/StateBlocks";
 import { formatAmount } from "../../lib/format";
-import { clearRestriction, getVehicle, listVehicles, openRestriction, removeVehicleImage, saveVehicle, uploadVehicleImage } from "./fleetApi";
+import { UpcomingTrips } from "./AssignmentsPanel";
+import { clearRestriction, getVehicle, markVehicleGenuine, listVehicles, openRestriction, removeVehicleImage, saveVehicle, uploadVehicleImage } from "./fleetApi";
 import { categoryLabels, centsToRand, dateTime, humanize, randToCents } from "./labels";
 import type { SaveVehicle, VehicleDetail, VehicleRestriction } from "../../types/api";
 
@@ -18,7 +19,7 @@ export function VehiclesPanel({ isAdmin }: { isAdmin: boolean }) {
     {vehicles.isLoading && <LoadingState label="Loading vehicles" />}{vehicles.isError && <ErrorState message={vehicles.error.message} />}
     {vehicles.data && <div className="admin-table-wrap"><table><thead><tr><th>Vehicle</th><th>Category</th><th>Seats</th><th>Operational</th><th>Website</th><th>Restrictions</th><th>Rate</th><th>Details</th></tr></thead><tbody>
       {vehicles.data.map(v => <tr key={v.id}>
-        <td><div className="admin-tour-cell">{v.imageUrl ? <img src={v.imageUrl} alt="" width="64" height="48" /> : <span className="admin-thumb-placeholder" aria-hidden="true" />}<span>{v.displayName}<small>{v.registration}</small></span></div></td>
+        <td><div className="admin-tour-cell">{v.imageUrl ? <img src={v.imageUrl} alt="" width="64" height="48" /> : <span className="admin-thumb-placeholder" aria-hidden="true" />}<span>{v.displayName}<small>{v.registration}</small>{v.demoData && <span className="admin-badge sample-badge">Sample data</span>}</span></div></td>
         <td>{categoryLabels[v.category]}</td><td>{v.capacity}</td>
         <td><span className={`admin-badge ${v.operationalStatus === "ACTIVE" ? "status-active" : "status-draft"}`}>{humanize(v.operationalStatus)}</span></td>
         <td><span className="admin-badge">{v.listingStatus === "LISTED" ? "Listed" : "Hidden"}</span></td>
@@ -39,7 +40,9 @@ function VehicleDetailView({ id, isAdmin, onClose }: { id: string; isAdmin: bool
   const v = vehicle.data!;
   return <section className="form-surface admin-detail" aria-label="Vehicle details">
     <div className="admin-heading"><div><p className="eyebrow">{v.registration}</p><h2>{v.displayName}</h2></div><button className="button button-secondary" onClick={onClose}>Close</button></div>
+    {v.demoData && <SampleNotice isAdmin={isAdmin} onConfirm={() => markVehicleGenuine(v.id)} queryKey={["admin", "vehicle", v.id]} subject="vehicle" />}
     <Restrictions vehicle={v} isAdmin={isAdmin} />
+    <UpcomingTrips trips={v.upcomingAssignments} subject="vehicle" />
     {isAdmin ? <VehicleEditor key={v.version} vehicle={v} isAdmin onDone={() => undefined} /> : <dl className="admin-detail-grid">
       {[["Category", categoryLabels[v.category]], ["Seats", v.capacity], ["Luggage", v.luggageCapacity ?? "—"], ["Operational", humanize(v.operationalStatus)],
         ["Website", v.listingStatus === "LISTED" ? "Listed" : "Hidden"], ["Operating notes", v.operatingNotes ?? "—"]]
@@ -156,5 +159,17 @@ function VehicleImages({ vehicle, isAdmin }: { vehicle: VehicleDetail; isAdmin: 
       <button className="button button-secondary" type="submit" disabled={!file || !alt.trim() || upload.isPending}>{upload.isPending ? "Uploading…" : "Upload photo"}</button>
     </form>}
     {(upload.isError || remove.isError) && <ErrorState message={(upload.error ?? remove.error)!.message} />}
+  </div>;
+}
+
+/** Explains a V2 sample record and lets an administrator confirm it is real. */
+export function SampleNotice({ isAdmin, onConfirm, queryKey, subject }: { isAdmin: boolean; onConfirm: () => Promise<unknown>; queryKey: unknown[]; subject: string }) {
+  const client = useQueryClient();
+  const confirm = useMutation({ mutationFn: onConfirm, onSuccess: async next => { client.setQueryData(queryKey, next); await client.invalidateQueries({ queryKey: ["admin"] }); } });
+  return <div className="admin-callout"><strong>Development sample data</strong>
+    <p>This {subject} was inserted as sample data by an early migration. Outside development it is never offered to customers or assigned to trips.
+      If it is a real {subject}, check every field first, then confirm it.</p>
+    {isAdmin && <button className="button button-secondary" onClick={() => { if (window.confirm(`Confirm this ${subject} is real?`)) confirm.mutate(); }} disabled={confirm.isPending}>Mark as genuine</button>}
+    {confirm.isError && <ErrorState message={confirm.error.message} />}
   </div>;
 }

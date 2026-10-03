@@ -87,6 +87,7 @@ export interface OperationsDashboard {
   privateTripRequests: number;
   inspectionsAwaitingReview: number;
   openVehicleRestrictions: number;
+  tripsNeedingAttention: number;
 }
 
 export interface OperationsBooking {
@@ -111,6 +112,7 @@ export interface OperationsBooking {
   bookingType: "TOUR" | "PRIVATE_TRIP";
   driver: string;
   assignmentStatus: AssignmentStatus | null;
+  demoData: boolean;
 }
 
 export interface PageResult<T> { content: T[]; number: number; totalPages: number; totalElements: number; }
@@ -125,7 +127,7 @@ export type EnquiryType = "GENERAL" | "TOUR" | "PRIVATE_TRIP";
 export interface EnquiryReceipt { reference: string; status: EnquiryStatus; message: string; duplicate: boolean; }
 export interface EnquirySummary {
   reference: string; source: EnquirySource; type: EnquiryType; status: EnquiryStatus; customerName: string; customerEmail: string;
-  customerPhone: string | null; messagePreview: string; tourTitle: string | null; requestedDate: string | null; passengers: number | null; createdAt: string;
+  customerPhone: string | null; messagePreview: string; tourTitle: string | null; requestedDate: string | null; passengers: number | null; createdAt: string; demoData: boolean;
 }
 export interface EnquiryDetail {
   reference: string; version: number; source: EnquirySource; type: EnquiryType; status: EnquiryStatus; customerName: string; customerEmail: string;
@@ -148,17 +150,18 @@ export interface VehicleImage { id: string; mediaId: string; url: string; altTex
 export interface VehicleSummary {
   id: string; registration: string; displayName: string; category: VehicleCategory; capacity: number; luggageCapacity: number | null;
   operationalStatus: OperationalStatus; listingStatus: ListingStatus; openRestrictions: VehicleRestriction[]; imageUrl: string | null; hourlyRateCents: number | null;
+  demoData: boolean;
 }
 export interface VehicleDetail extends Omit<VehicleSummary, "openRestrictions" | "imageUrl"> {
   version: number; publicDescription: string | null; operatingNotes: string | null; notes: string | null; minimumMinutes: number | null;
-  amenities: string[]; images: VehicleImage[]; restrictions: VehicleRestriction[];
+  amenities: string[]; images: VehicleImage[]; restrictions: VehicleRestriction[]; upcomingAssignments: AdminAssignment[];
 }
-export type SaveVehicle = Omit<VehicleDetail, "id" | "images" | "restrictions">;
+export type SaveVehicle = Omit<VehicleDetail, "id" | "images" | "restrictions" | "upcomingAssignments" | "demoData">;
 export type DriverVerification = "PENDING" | "VERIFIED" | "REJECTED" | "SUSPENDED";
 export type DriverDocumentType = "DRIVING_LICENCE" | "PRDP" | "IDENTITY_DOCUMENT" | "OTHER";
 export interface DriverSummary {
   id: string; name: string; contact: string | null; email: string | null; accountEnabled: boolean; status: "ACTIVE" | "INACTIVE";
-  verificationStatus: DriverVerification; licenceExpiresOn: string | null; prdpExpiresOn: string | null; eligibilityProblems: string[]; documentsAwaitingReview: number;
+  verificationStatus: DriverVerification; licenceExpiresOn: string | null; prdpExpiresOn: string | null; eligibilityProblems: string[]; documentsAwaitingReview: number; demoData: boolean;
 }
 export interface DriverDocument {
   id: string; version: number; type: DriverDocumentType; mediaId: string; contentType: string; expiresOn: string | null;
@@ -167,13 +170,14 @@ export interface DriverDocument {
 export interface DriverDetail {
   id: string; version: number; name: string; contact: string | null; email: string | null; accountEnabled: boolean; status: "ACTIVE" | "INACTIVE";
   notes: string | null; verificationStatus: DriverVerification; verificationNotes: string | null; verifiedBy: string | null; verifiedAt: string | null;
-  licenceNumber: string | null; licenceExpiresOn: string | null; prdpExpiresOn: string | null; eligibilityProblems: string[]; documents: DriverDocument[];
+  licenceNumber: string | null; licenceExpiresOn: string | null; prdpExpiresOn: string | null; eligibilityProblems: string[]; documents: DriverDocument[]; demoData: boolean;
+  upcomingAssignments: AdminAssignment[];
 }
 export type AssignmentStatus = "SCHEDULED" | "AWAITING_RELEASE" | "RELEASED" | "RETURNED" | "CLOSED" | "CANCELLED";
 export interface AdminAssignment {
   id: string; version: number; status: AssignmentStatus; bookingReference: string; bookingType: string; title: string; startsAt: string; endsAt: string;
   blockedUntil: string; passengers: number; vehicleId: string | null; vehicleName: string | null; registration: string | null; driverId: string | null;
-  driverName: string | null; collectionState: string; returnState: string;
+  driverName: string | null; collectionState: string; returnState: string; problems: string[];
 }
 export interface ResourceOption { id: string; name: string; detail: string | null; available: boolean; reasons: string[]; }
 export interface ResourceOptions { vehicles: ResourceOption[]; drivers: ResourceOption[]; turnaroundMinutes: number; }
