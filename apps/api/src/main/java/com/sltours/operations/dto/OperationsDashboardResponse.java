@@ -11,6 +11,7 @@ public record OperationsDashboardResponse(
         long newEnquiries,
         long privateTripRequests,
         long inspectionsAwaitingReview,
-        long openVehicleRestrictions
+        long openVehicleRestrictions,
+        long tripsNeedingAttention
 ) {
 }

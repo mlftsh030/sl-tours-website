@@ -28,6 +28,7 @@ public class AdminDriverController {
     @PatchMapping("/{id}/account") DriverDetail accountStatus(@PathVariable UUID id, @RequestBody AccountStatusRequest request) {
         return drivers.setAccountEnabled(id, request.enabled());
     }
+    @PostMapping("/{id}/genuine") DriverDetail markGenuine(@PathVariable UUID id) { return drivers.markGenuine(id); }
     @PatchMapping("/{id}/verification") DriverDetail verify(@PathVariable UUID id, @Valid @RequestBody VerificationRequest request) {
         return drivers.setVerification(id, request);
     }

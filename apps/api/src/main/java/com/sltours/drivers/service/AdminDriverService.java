@@ -30,10 +30,13 @@ public class AdminDriverService {
     private final MediaService media;
     private final AuditService audit;
     private final SessionRegistry sessions;
+    private final com.sltours.assignments.service.AdminAssignmentService assignments;
     public AdminDriverService(DriverRepository drivers, DriverDocumentRepository documents, AccountRepository accounts,
-            PasswordEncoder passwords, DriverEligibility eligibility, MediaService media, AuditService audit, SessionRegistry sessions) {
+            PasswordEncoder passwords, DriverEligibility eligibility, MediaService media, AuditService audit, SessionRegistry sessions,
+            com.sltours.assignments.service.AdminAssignmentService assignments) {
         this.drivers = drivers; this.documents = documents; this.accounts = accounts; this.passwords = passwords;
         this.eligibility = eligibility; this.media = media; this.audit = audit; this.sessions = sessions;
+        this.assignments = assignments;
     }
 
     @Transactional(readOnly = true)
@@ -44,7 +47,7 @@ public class AdminDriverService {
             return new DriverSummary(d.getId(), d.getName(), d.getContact(), account.map(Account::getEmail).orElse(null),
                 account.map(Account::isEnabled).orElse(false), d.getStatus(), d.getVerificationStatus(), d.getLicenceExpiresOn(),
                 d.getPrdpExpiresOn(), eligibility.problems(d, account.map(Account::isEnabled).orElse(false), today),
-                documents.countByDriverIdAndStatus(d.getId(), DriverDocument.Status.PENDING_REVIEW));
+                documents.countByDriverIdAndStatus(d.getId(), DriverDocument.Status.PENDING_REVIEW), d.isDemoData());
         }).toList();
     }
 
@@ -120,6 +123,16 @@ public class AdminDriverService {
     }
 
     @Transactional
+    public DriverDetail markGenuine(UUID id) {
+        Driver driver = find(id);
+        if (!driver.isDemoData()) throw new IllegalArgumentException("This driver is not flagged as sample data");
+        driver.setDemoData(false);
+        drivers.flush();
+        audit.record("SAMPLE_FLAG_REMOVED", id.toString(), "driver confirmed as genuine");
+        return detail(driver);
+    }
+
+    @Transactional
     public DriverDetail uploadDocument(UUID id, DriverDocument.Type type, LocalDate expiresOn, MultipartFile file) {
         Driver driver = find(id);
         MediaFile stored = media.store(file, MediaPurpose.DRIVER_DOCUMENT, MediaFile.Visibility.PRIVATE, MediaService.DOCUMENTS);
@@ -184,7 +197,7 @@ public class AdminDriverService {
         return new DriverDetail(d.getId(), d.getVersion(), d.getName(), d.getContact(), account.map(Account::getEmail).orElse(null), enabled,
             d.getStatus(), d.getNotes(), d.getVerificationStatus(), d.getVerificationNotes(), d.getVerifiedBy(), d.getVerifiedAt(),
             d.getLicenceNumber(), d.getLicenceExpiresOn(), d.getPrdpExpiresOn(),
-            eligibility.problems(d, enabled, LocalDate.now(OPERATING_ZONE)), docs);
+            eligibility.problems(d, enabled, LocalDate.now(OPERATING_ZONE)), docs, d.isDemoData(), assignments.upcomingForDriver(d.getId()));
     }
     private Optional<Account> account(Driver d) { return d.getAccountId() == null ? Optional.empty() : accounts.findById(d.getAccountId()); }
     private Driver find(UUID id) { return drivers.findById(id).orElseThrow(() -> new ResourceNotFoundException("Driver not found")); }

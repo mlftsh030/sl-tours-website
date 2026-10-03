@@ -23,9 +23,13 @@ public class Driver {
     @Column(length = 180) private String verifiedBy;
     private OffsetDateTime verifiedAt;
     @Column(nullable = false) private OffsetDateTime createdAt;
+    /** Development sample row from migration V2 (flagged by V12); excluded from inventory outside dev/test. */
+    @Column(nullable = false) private boolean demoData;
     @Column(nullable = false) private OffsetDateTime updatedAt;
     @PrePersist void onCreate() { createdAt = OffsetDateTime.now(); updatedAt = createdAt; }
     @PreUpdate void onUpdate() { updatedAt = OffsetDateTime.now(); }
+    public boolean isDemoData() { return demoData; }
+    public void setDemoData(boolean value) { demoData = value; }
     public UUID getId() { return id; }
     public long getVersion() { return version == null ? 0 : version; }
     public String getName() { return name; }

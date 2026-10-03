@@ -24,10 +24,12 @@ public class AvailabilityService {
     private final AccountRepository accounts;
     private final DriverEligibility eligibility;
     private final OperationsSettingsRepository settings;
+    private final com.sltours.shared.demo.DemoDataPolicy demo;
     public AvailabilityService(VehicleRepository vehicles, VehicleRestrictionRepository restrictions, AssignmentRepository assignments,
-            DriverRepository drivers, AccountRepository accounts, DriverEligibility eligibility, OperationsSettingsRepository settings) {
+            DriverRepository drivers, AccountRepository accounts, DriverEligibility eligibility, OperationsSettingsRepository settings,
+            com.sltours.shared.demo.DemoDataPolicy demo) {
         this.vehicles = vehicles; this.restrictions = restrictions; this.assignments = assignments; this.drivers = drivers;
-        this.accounts = accounts; this.eligibility = eligibility; this.settings = settings;
+        this.accounts = accounts; this.eligibility = eligibility; this.settings = settings; this.demo = demo;
     }
 
     /** Every vehicle with the reasons it cannot take a trip in [start, end); public listings skip hidden vehicles. */
@@ -38,8 +40,9 @@ public class AvailabilityService {
         Set<UUID> restricted = restrictions.findRestrictedVehicleIds();
         List<VehicleOption> options = new ArrayList<>();
         for (Vehicle v : vehicles.findAllByOrderByDisplayNameAsc()) {
-            if (listedOnly && v.getListingStatus() != Vehicle.ListingStatus.LISTED) continue;
+            if (listedOnly && (v.getListingStatus() != Vehicle.ListingStatus.LISTED || demo.excludes(v.isDemoData()))) continue;
             List<String> reasons = new ArrayList<>();
+            if (demo.excludes(v.isDemoData())) reasons.add("Development sample record");
             if (v.getOperationalStatus() != Vehicle.OperationalStatus.ACTIVE) reasons.add("Not in operational service");
             if (restricted.contains(v.getId())) reasons.add("Open safety or maintenance restriction");
             if (v.getCapacity() < passengers) reasons.add("Seats " + v.getCapacity());
@@ -56,6 +59,7 @@ public class AvailabilityService {
         for (Driver d : drivers.findAllByOrderByNameAsc()) {
             boolean enabled = d.getAccountId() != null && accounts.findById(d.getAccountId()).map(Account::isEnabled).orElse(false);
             List<String> reasons = new ArrayList<>(eligibility.problems(d, enabled, start.atZoneSameInstant(AssignmentService.OPERATING_ZONE).toLocalDate()));
+            if (demo.excludes(d.isDemoData())) reasons.add("Development sample record");
             if (!assignments.driverConflicts(d.getId(), start, blockedUntil, AssignmentRepository.NONE).isEmpty())
                 reasons.add("Already assigned (including turnaround)");
             options.add(new DriverOption(d, reasons));

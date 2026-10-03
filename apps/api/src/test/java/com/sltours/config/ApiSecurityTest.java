@@ -67,7 +67,7 @@ class ApiSecurityTest {
         mvc.perform(get("/api/v1/account/bookings")).andExpect(status().isUnauthorized());
     }
     @Test void adminAndCustomerAuthorizationIsEnforced() throws Exception {
-        when(operations.dashboard()).thenReturn(new OperationsDashboardResponse(0,0,0,0,0,0,0,0,0,0,0));
+        when(operations.dashboard()).thenReturn(new OperationsDashboardResponse(0,0,0,0,0,0,0,0,0,0,0,0));
         mvc.perform(get("/api/v1/admin/dashboard").with(user("admin").roles("ADMIN"))).andExpect(status().isOk());
         mvc.perform(get("/api/v1/admin/dashboard").with(user("staff").roles("STAFF"))).andExpect(status().isOk());
         mvc.perform(get("/api/v1/admin/customers").with(user("customer").roles("CUSTOMER"))).andExpect(status().isForbidden());

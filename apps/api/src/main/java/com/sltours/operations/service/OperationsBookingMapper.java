@@ -25,6 +25,6 @@ public class OperationsBookingMapper {
             b.getTravelDate(), b.getGuests(), b.getTotalAmountCents(), b.getAmountPaidCents(), b.getStatus(),
             "Unassigned", vehicle, b.getCustomerEmail(), b.getCustomerPhone(), b.getCustomerCountry(),
             b.getPickupLocation(), b.getNotes(), b.getAccountId() != null, b.getCreatedAt(), b.getVersion(),
-            b.getBookingType().name(), driver, assignment.map(a -> a.getStatus().name()).orElse(null));
+            b.getBookingType().name(), driver, assignment.map(a -> a.getStatus().name()).orElse(null), b.isDemoData());
     }
 }

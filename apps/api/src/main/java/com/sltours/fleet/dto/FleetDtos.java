@@ -12,11 +12,12 @@ public final class FleetDtos {
         OffsetDateTime openedAt, String clearedBy, OffsetDateTime clearedAt, String clearanceNote) {}
     public record VehicleSummary(UUID id, String registration, String displayName, VehicleCategory category, int capacity,
         Integer luggageCapacity, Vehicle.OperationalStatus operationalStatus, Vehicle.ListingStatus listingStatus,
-        List<Restriction> openRestrictions, String imageUrl, Integer hourlyRateCents) {}
+        List<Restriction> openRestrictions, String imageUrl, Integer hourlyRateCents, boolean demoData) {}
     public record VehicleDetail(UUID id, long version, String registration, String displayName, VehicleCategory category, int capacity,
         Integer luggageCapacity, Vehicle.OperationalStatus operationalStatus, Vehicle.ListingStatus listingStatus, String publicDescription,
         String operatingNotes, String notes, Integer hourlyRateCents, Integer minimumMinutes, List<String> amenities, List<Image> images,
-        List<Restriction> restrictions) {}
+        List<Restriction> restrictions, boolean demoData,
+        List<com.sltours.assignments.dto.AssignmentDtos.AdminAssignment> upcomingAssignments) {}
     public record SaveVehicleRequest(@NotNull @Min(0) Long version,
         @NotBlank @Size(max = 40) @Pattern(regexp = "[A-Za-z0-9 -]+", message = "Use letters, numbers, spaces and dashes") String registration,
         @NotBlank @Size(max = 120) String displayName, @NotNull VehicleCategory category, @Min(1) @Max(80) int capacity,

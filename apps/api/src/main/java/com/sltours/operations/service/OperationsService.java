@@ -18,24 +18,36 @@ public class OperationsService {
     private final AuditService audit;
     private final JdbcTemplate jdbc;
     private final com.sltours.assignments.service.AssignmentService assignments;
+    private final com.sltours.assignments.service.AdminAssignmentService attention;
+    private final com.sltours.shared.demo.DemoDataPolicy demo;
     public OperationsService(BookingRepository bookings, OperationsBookingMapper mapper,
-            BookingStatusPolicy policy, AuditService audit, JdbcTemplate jdbc, com.sltours.assignments.service.AssignmentService assignments) {
+            BookingStatusPolicy policy, AuditService audit, JdbcTemplate jdbc, com.sltours.assignments.service.AssignmentService assignments,
+            com.sltours.assignments.service.AdminAssignmentService attention, com.sltours.shared.demo.DemoDataPolicy demo) {
         this.bookings = bookings; this.mapper = mapper; this.policy = policy; this.audit = audit; this.jdbc = jdbc; this.assignments = assignments;
+        this.attention = attention; this.demo = demo;
     }
     @Transactional(readOnly = true)
     public OperationsDashboardResponse dashboard() {
-        return new OperationsDashboardResponse(bookings.countByTravelDate(LocalDate.now(ZoneId.of("Africa/Johannesburg"))),
-            bookings.countByStatus(BookingStatus.AWAITING_PAYMENT), bookings.countByStatus(BookingStatus.CONFIRMED),
-            bookings.countByStatus(BookingStatus.ENQUIRY), bookings.sumNonCancelledRevenueCents(),
-            jdbc.queryForObject("select count(*) from guides where status = 'ACTIVE'", Long.class),
-            jdbc.queryForObject("""
+        // Outside dev/test, V2 sample rows (demo_data) are left out of every figure.
+        String real = demo.demoDataUsable() ? "" : " and demo_data = false";
+        LocalDate today = LocalDate.now(ZoneId.of("Africa/Johannesburg"));
+        return new OperationsDashboardResponse(
+            count("select count(*) from bookings where travel_date = ?" + real, today),
+            count("select count(*) from bookings where status = 'AWAITING_PAYMENT'" + real),
+            count("select count(*) from bookings where status = 'CONFIRMED'" + real),
+            count("select count(*) from bookings where status = 'ENQUIRY'" + real),
+            count("select coalesce(sum(total_amount_cents), 0) from bookings where status not in ('CANCELLED', 'REFUNDED')" + real),
+            count("select count(*) from guides where status = 'ACTIVE'" + real),
+            count("""
                 select count(*) from vehicles v where v.operational_status = 'ACTIVE'
-                and not exists (select 1 from vehicle_restrictions r where r.vehicle_id = v.id and r.cleared_at is null)""", Long.class),
-            jdbc.queryForObject("select count(*) from enquiries where status = 'NEW'", Long.class),
-            jdbc.queryForObject("select count(*) from bookings where booking_type = 'PRIVATE_TRIP' and status = 'ENQUIRY'", Long.class),
+                and not exists (select 1 from vehicle_restrictions r where r.vehicle_id = v.id and r.cleared_at is null)""" + real),
+            count("select count(*) from enquiries where status = 'NEW'" + real),
+            count("select count(*) from bookings where booking_type = 'PRIVATE_TRIP' and status = 'ENQUIRY'" + real),
             jdbc.queryForObject("select count(*) from vehicle_inspections where review_status = 'PENDING_REVIEW'", Long.class),
-            jdbc.queryForObject("select count(*) from vehicle_restrictions where cleared_at is null", Long.class));
+            jdbc.queryForObject("select count(*) from vehicle_restrictions where cleared_at is null", Long.class),
+            attention.needingAttention().size());
     }
+    private long count(String sql, Object... args) { return jdbc.queryForObject(sql, Long.class, args); }
     @Transactional(readOnly = true)
     public Page<OperationsBookingResponse> bookings(BookingStatus status, int page, int size) {
         var pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt"), Sort.Order.asc("id")));

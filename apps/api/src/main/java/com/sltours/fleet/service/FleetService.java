@@ -18,9 +18,11 @@ public class FleetService {
     private final VehicleImageRepository images;
     private final MediaService media;
     private final AuditService audit;
+    private final com.sltours.assignments.service.AdminAssignmentService assignments;
     public FleetService(VehicleRepository vehicles, VehicleRestrictionRepository restrictions, VehicleImageRepository images,
-            MediaService media, AuditService audit) {
+            MediaService media, AuditService audit, com.sltours.assignments.service.AdminAssignmentService assignments) {
         this.vehicles = vehicles; this.restrictions = restrictions; this.images = images; this.media = media; this.audit = audit;
+        this.assignments = assignments;
     }
 
     @Transactional(readOnly = true)
@@ -30,7 +32,7 @@ public class FleetService {
         return all.stream().map(v -> new VehicleSummary(v.getId(), v.getRegistration(), v.getDisplayName(), v.getCategory(), v.getCapacity(),
             v.getLuggageCapacity(), v.getOperationalStatus(), v.getListingStatus(),
             restrictions.findByVehicleIdAndClearedAtIsNull(v.getId()).stream().map(FleetService::restriction).toList(),
-            firstImage.get(v.getId()), v.getHourlyRateCents())).toList();
+            firstImage.get(v.getId()), v.getHourlyRateCents(), v.isDemoData())).toList();
     }
 
     @Transactional(readOnly = true)
@@ -58,6 +60,17 @@ public class FleetService {
         vehicles.flush();
         audit.record("VEHICLE_UPDATED", id.toString(), before + " -> " + vehicle.getOperationalStatus() + "/" + vehicle.getListingStatus()
             + "/rate=" + vehicle.getHourlyRateCents());
+        return detail(vehicle);
+    }
+
+    /** Confirms that a row flagged as V2 sample data is in fact a real vehicle. */
+    @Transactional
+    public VehicleDetail markGenuine(UUID id) {
+        Vehicle vehicle = find(id);
+        if (!vehicle.isDemoData()) throw new IllegalArgumentException("This vehicle is not flagged as sample data");
+        vehicle.setDemoData(false);
+        vehicles.flush();
+        audit.record("SAMPLE_FLAG_REMOVED", id.toString(), "vehicle " + vehicle.getRegistration() + " confirmed as genuine");
         return detail(vehicle);
     }
 
@@ -121,7 +134,8 @@ public class FleetService {
         return new VehicleDetail(v.getId(), v.getVersion(), v.getRegistration(), v.getDisplayName(), v.getCategory(), v.getCapacity(),
             v.getLuggageCapacity(), v.getOperationalStatus(), v.getListingStatus(), v.getPublicDescription(), v.getOperatingNotes(),
             v.getNotes(), v.getHourlyRateCents(), v.getMinimumMinutes(), List.copyOf(v.getAmenities()), imagesFor(v.getId()),
-            restrictions.findByVehicleIdOrderByOpenedAtDesc(v.getId()).stream().map(FleetService::restriction).toList());
+            restrictions.findByVehicleIdOrderByOpenedAtDesc(v.getId()).stream().map(FleetService::restriction).toList(), v.isDemoData(),
+            assignments.upcomingForVehicle(v.getId()));
     }
     public static Restriction restriction(VehicleRestriction r) {
         return new Restriction(r.getId(), r.getVersion(), r.getType(), r.getReason(), r.getSourceInspectionId(), r.getOpenedBy(),

@@ -40,6 +40,10 @@ public class Booking {
 
     private UUID idempotencyKey;
 
+    /** Development sample row from migration V2 (flagged by V12). */
+    @Column(nullable = false)
+    private boolean demoData;
+
     @Column(nullable = false)
     private LocalDate travelDate;
 
@@ -95,6 +99,7 @@ public class Booking {
         updatedAt = OffsetDateTime.now();
     }
 
+    public boolean isDemoData() { return demoData; }
     public BookingType getBookingType() { return bookingType; }
     public void setBookingType(BookingType value) { bookingType = value; }
     public UUID getIdempotencyKey() { return idempotencyKey; }

@@ -26,6 +26,7 @@ public class AdminAssignmentController {
         return assignments.list(scope);
     }
     /** Includes driver eligibility details, which are verification data and therefore administrator-only. */
+    @GetMapping("/assignments/attention") List<AdminAssignment> attention() { return assignments.needingAttention(); }
     @GetMapping("/assignments/options") @PreAuthorize("hasRole('ADMIN')")
     ResourceOptions options(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime startsAt,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime endsAt,

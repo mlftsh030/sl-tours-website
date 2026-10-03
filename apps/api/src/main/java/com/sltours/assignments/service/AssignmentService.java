@@ -38,11 +38,12 @@ public class AssignmentService {
     private final OperationsSettingsRepository settings;
     private final InspectionRepository inspections;
     private final AuditService audit;
+    private final com.sltours.shared.demo.DemoDataPolicy demo;
     public AssignmentService(AssignmentRepository assignments, VehicleRepository vehicles, VehicleRestrictionRepository restrictions,
             DriverRepository drivers, AccountRepository accounts, DriverEligibility eligibility, OperationsSettingsRepository settings,
-            InspectionRepository inspections, AuditService audit) {
+            InspectionRepository inspections, AuditService audit, com.sltours.shared.demo.DemoDataPolicy demo) {
         this.assignments = assignments; this.vehicles = vehicles; this.restrictions = restrictions; this.drivers = drivers;
-        this.accounts = accounts; this.eligibility = eligibility; this.settings = settings; this.inspections = inspections; this.audit = audit;
+        this.accounts = accounts; this.eligibility = eligibility; this.settings = settings; this.inspections = inspections; this.audit = audit; this.demo = demo;
     }
 
     @Transactional
@@ -68,6 +69,8 @@ public class AssignmentService {
         if (assignment.getVersion() != version) throw new ConflictException("This assignment changed. Reload before saving.");
         if (!NOT_STARTED.contains(assignment.getStatus()))
             throw new IllegalArgumentException("The vehicle has already been released; record the return before changing it");
+        // A changed assignment takes the current turnaround setting (see docs/operations/DEPLOYMENT.md).
+        assignment.setWindow(assignment.getStartsAt(), assignment.getEndsAt(), settings.current().getTurnaroundMinutes());
         checkResources(vehicleId, driverId, guests, assignment, assignment.getId());
         boolean changed = !Objects.equals(vehicleId, assignment.getVehicleId()) || !Objects.equals(driverId, assignment.getDriverId());
         if (changed) {
@@ -113,6 +116,8 @@ public class AssignmentService {
     /** Vehicle must be operational, unrestricted, large enough and free; driver must be eligible and free. */
     private void checkResources(UUID vehicleId, UUID driverId, int passengers, Assignment window, UUID ignore) {
         Vehicle vehicle = vehicles.findById(vehicleId).orElseThrow(() -> new ResourceNotFoundException("Vehicle not found"));
+        if (demo.excludes(vehicle.isDemoData()))
+            throw new IllegalArgumentException(vehicle.getDisplayName() + " is a development sample record. Mark it as genuine first if it is a real vehicle.");
         if (vehicle.getOperationalStatus() != Vehicle.OperationalStatus.ACTIVE)
             throw new IllegalArgumentException(vehicle.getDisplayName() + " is not in operational service");
         if (restrictions.existsByVehicleIdAndClearedAtIsNull(vehicleId))
@@ -120,6 +125,8 @@ public class AssignmentService {
         if (vehicle.getCapacity() < passengers)
             throw new IllegalArgumentException(vehicle.getDisplayName() + " seats " + vehicle.getCapacity() + ", fewer than " + passengers + " passengers");
         Driver driver = drivers.findById(driverId).orElseThrow(() -> new ResourceNotFoundException("Driver not found"));
+        if (demo.excludes(driver.isDemoData()))
+            throw new IllegalArgumentException(driver.getName() + " is a development sample record. Mark them as genuine first if they are a real driver.");
         boolean enabled = driver.getAccountId() != null && accounts.findById(driver.getAccountId()).map(Account::isEnabled).orElse(false);
         eligibility.require(driver, enabled, window.getStartsAt().atZoneSameInstant(OPERATING_ZONE).toLocalDate());
         if (!assignments.vehicleConflicts(vehicleId, window.getStartsAt(), window.getBlockedUntil(), ignore).isEmpty())

@@ -47,6 +47,11 @@ class PrivateTripIntegrationTest extends PostgresIntegrationTest {
             4, "Child seat please", "Lerato M", "Lerato@Example.com", "+27 82 111 2222", expectedTotal);
     }
 
+    private int quoteFor(Vehicle vehicle, LocalDate date) {
+        return trips.search(date, LocalTime.of(10, 0), 180, 4).vehicles().stream().filter(c -> c.id().equals(vehicle.getId()))
+            .findFirst().orElseThrow().quote().totalCents();
+    }
+
     @Test void searchShowsOnlyListedOperationalUnrestrictedFreeVehiclesThatFitWithBackendPrices() {
         LocalDate date = futureDate(40);
         Vehicle listed = fixtures.vehicle(VehicleCategory.LUXURY_VAN, 7, Vehicle.ListingStatus.LISTED);
@@ -137,7 +142,7 @@ class PrivateTripIntegrationTest extends PostgresIntegrationTest {
         Vehicle b = fixtures.vehicle(VehicleCategory.VAN, 7, Vehicle.ListingStatus.LISTED);
         Driver driver = fixtures.driver(true);
         LocalDate date = futureDate(43);
-        int total = trips.search(date, LocalTime.of(10, 0), 180, 4).vehicles().get(0).quote().totalCents();
+        int total = quoteFor(a, date);
         String first = trips.submit(request(a.getId(), date, 180, total), null).reference();
         String second = trips.submit(request(b.getId(), date, 180, total), null).reference();
         admin.confirm(first, new ConfirmRequest(0L, a.getId(), driver.getId()));
@@ -157,7 +162,7 @@ class PrivateTripIntegrationTest extends PostgresIntegrationTest {
         Vehicle second = fixtures.vehicle(VehicleCategory.VAN, 7, Vehicle.ListingStatus.LISTED);
         Driver driver = fixtures.driver(true);
         LocalDate date = futureDate(45);
-        int total = trips.search(date, LocalTime.of(10, 0), 180, 4).vehicles().get(0).quote().totalCents();
+        int total = quoteFor(first, date);
         String reference = trips.submit(request(first.getId(), date, 180, total), null).reference();
         AdminPrivateTrip confirmed = admin.confirm(reference, new ConfirmRequest(0L, first.getId(), driver.getId()));
         assertThatThrownBy(() -> admin.confirm(reference, new ConfirmRequest(confirmed.bookingVersion(), second.getId(), driver.getId())))

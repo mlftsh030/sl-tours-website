@@ -44,14 +44,15 @@ public class PrivateTripService {
     private final EnquiryService enquiries;
     private final ObjectMapper json;
     private final boolean allowSampleRates;
+    private final com.sltours.shared.demo.DemoDataPolicy demo;
 
     public PrivateTripService(AvailabilityService availability, VehicleRepository vehicles, FleetService fleet, PrivateTripRateRepository rates,
             PrivateTripFeeRepository fees, OperationsSettingsRepository settings, BookingRepository bookings, BookingReferenceGenerator references,
             PrivateTripDetailsRepository details, AccountRepository accounts, EnquiryService enquiries, ObjectMapper json,
-            @Value("${sltours.pricing.allow-sample-rates:false}") boolean allowSampleRates) {
+            @Value("${sltours.pricing.allow-sample-rates:false}") boolean allowSampleRates, com.sltours.shared.demo.DemoDataPolicy demo) {
         this.availability = availability; this.vehicles = vehicles; this.fleet = fleet; this.rates = rates; this.fees = fees;
         this.settings = settings; this.bookings = bookings; this.references = references; this.details = details; this.accounts = accounts;
-        this.enquiries = enquiries; this.json = json; this.allowSampleRates = allowSampleRates;
+        this.enquiries = enquiries; this.json = json; this.allowSampleRates = allowSampleRates; this.demo = demo;
     }
 
     /** The rate that applies to a vehicle, or empty when it can only be quoted manually. */
@@ -72,7 +73,8 @@ public class PrivateTripService {
     @Transactional(readOnly = true)
     public FleetResult fleet() {
         var listed = vehicles.findAllByOrderByDisplayNameAsc().stream()
-            .filter(v -> v.getListingStatus() == Vehicle.ListingStatus.LISTED && v.getOperationalStatus() != Vehicle.OperationalStatus.RETIRED).toList();
+            .filter(v -> v.getListingStatus() == Vehicle.ListingStatus.LISTED && v.getOperationalStatus() != Vehicle.OperationalStatus.RETIRED)
+            .filter(v -> !demo.excludes(v.isDemoData())).toList();
         return new FleetResult(cards(listed, null, null), disclosures());
     }
 
@@ -92,6 +94,7 @@ public class PrivateTripService {
         OffsetDateTime start = start(request.date(), request.startTime(), request.durationMinutes());
         OffsetDateTime end = start.plusMinutes(request.durationMinutes());
         Vehicle vehicle = vehicles.findById(request.vehicleId()).filter(v -> v.getListingStatus() == Vehicle.ListingStatus.LISTED)
+            .filter(v -> !demo.excludes(v.isDemoData()))
             .orElseThrow(() -> new ResourceNotFoundException("Vehicle not found"));
         var option = availability.vehicles(start, end, request.passengers(), true).stream()
             .filter(o -> o.vehicle().getId().equals(vehicle.getId())).findFirst().orElseThrow();

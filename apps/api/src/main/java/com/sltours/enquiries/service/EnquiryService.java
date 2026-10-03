@@ -178,7 +178,7 @@ public class EnquiryService {
         String preview = e.getMessage().length() > 140 ? e.getMessage().substring(0, 140) + "…" : e.getMessage();
         return new EnquirySummary(e.getReference(), e.getSource(), e.getType(), e.getStatus(), e.getCustomerName(),
             e.getCustomerEmail(), e.getCustomerPhone(), preview, e.getTour() == null ? null : e.getTour().getTitle(),
-            e.getRequestedDate(), e.getPassengers(), e.getCreatedAt());
+            e.getRequestedDate(), e.getPassengers(), e.getCreatedAt(), e.isDemoData());
     }
 
     private EnquiryDetail detail(Enquiry e) {

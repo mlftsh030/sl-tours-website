@@ -26,11 +26,12 @@ public class AdminAssignmentService {
     private final DriverRepository drivers;
     private final InspectionRepository inspections;
     private final OperationsSettingsRepository settings;
+    private final AssignmentHealthService health;
     public AdminAssignmentService(AssignmentRepository assignments, AssignmentService assignmentService, AvailabilityService availability,
             BookingRepository bookings, VehicleRepository vehicles, DriverRepository drivers, InspectionRepository inspections,
-            OperationsSettingsRepository settings) {
+            OperationsSettingsRepository settings, AssignmentHealthService health) {
         this.assignments = assignments; this.assignmentService = assignmentService; this.availability = availability; this.bookings = bookings;
-        this.vehicles = vehicles; this.drivers = drivers; this.inspections = inspections; this.settings = settings;
+        this.vehicles = vehicles; this.drivers = drivers; this.inspections = inspections; this.settings = settings; this.health = health;
     }
 
     /** "active" = not yet closed or cancelled; "recent" also includes the last 14 days of finished work. */
@@ -41,6 +42,26 @@ public class AdminAssignmentService {
                 AssignmentStatus.RELEASED, AssignmentStatus.RETURNED))
             : assignments.findByStatusNotAndBlockedUntilAfterOrderByStartsAtAsc(AssignmentStatus.CANCELLED, OffsetDateTime.now().minusDays(14));
         return rows.stream().map(this::view).toList();
+    }
+
+    /** Upcoming trips that cannot go ahead as planned; reassign them with {@link #change}. */
+    @Transactional(readOnly = true)
+    public List<AdminAssignment> needingAttention() {
+        return assignments.findByStatusInAndEndsAtAfterOrderByStartsAtAsc(AssignmentHealthService.REASSIGNABLE, OffsetDateTime.now()).stream()
+            .map(this::view).filter(a -> !a.problems().isEmpty()).toList();
+    }
+
+    /** Upcoming, not yet released trips using this vehicle, with any problems the change caused. */
+    @Transactional(readOnly = true)
+    public List<AdminAssignment> upcomingForVehicle(UUID vehicleId) {
+        return assignments.findByVehicleIdAndStatusInAndEndsAtAfterOrderByStartsAtAsc(vehicleId, AssignmentHealthService.REASSIGNABLE, OffsetDateTime.now())
+            .stream().map(this::view).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<AdminAssignment> upcomingForDriver(UUID driverId) {
+        return assignments.findByDriverIdAndStatusInAndEndsAtAfterOrderByStartsAtAsc(driverId, AssignmentHealthService.REASSIGNABLE, OffsetDateTime.now())
+            .stream().map(this::view).toList();
     }
 
     @Transactional
@@ -80,7 +101,7 @@ public class AdminAssignmentService {
         return new AdminAssignment(a.getId(), a.getVersion(), a.getStatus(), booking.getReference(), booking.getBookingType().name(), booking.getTitle(),
             a.getStartsAt(), a.getEndsAt(), a.getBlockedUntil(), booking.getGuests(), a.getVehicleId(), vehicle == null ? null : vehicle.getDisplayName(),
             vehicle == null ? null : vehicle.getRegistration(), a.getDriverId(), driver == null ? null : driver.getName(),
-            state(a.getId(), Inspection.Type.COLLECTION), state(a.getId(), Inspection.Type.RETURN));
+            state(a.getId(), Inspection.Type.COLLECTION), state(a.getId(), Inspection.Type.RETURN), health.problems(a));
     }
 
     private String state(UUID assignmentId, Inspection.Type type) {

@@ -14,6 +14,9 @@ public interface AssignmentRepository extends JpaRepository<Assignment, UUID> {
     List<Assignment> findByBookingIdAndStatusIn(UUID bookingId, Collection<AssignmentStatus> statuses);
     List<Assignment> findByStatusNotAndBlockedUntilAfterOrderByStartsAtAsc(AssignmentStatus excluded, OffsetDateTime after);
     List<Assignment> findByStatusInOrderByStartsAtAsc(Collection<AssignmentStatus> statuses);
+    List<Assignment> findByStatusInAndEndsAtAfterOrderByStartsAtAsc(Collection<AssignmentStatus> statuses, OffsetDateTime after);
+    List<Assignment> findByVehicleIdAndStatusInAndEndsAtAfterOrderByStartsAtAsc(UUID vehicleId, Collection<AssignmentStatus> statuses, OffsetDateTime after);
+    List<Assignment> findByDriverIdAndStatusInAndEndsAtAfterOrderByStartsAtAsc(UUID driverId, Collection<AssignmentStatus> statuses, OffsetDateTime after);
 
     /** Live assignments for the vehicle whose blocked window overlaps [from, until). */
     @Query("""

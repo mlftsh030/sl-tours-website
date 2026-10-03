@@ -10,7 +10,7 @@ public final class AssignmentDtos {
     private AssignmentDtos() {}
     public record AdminAssignment(UUID id, long version, AssignmentStatus status, String bookingReference, String bookingType, String title,
         OffsetDateTime startsAt, OffsetDateTime endsAt, OffsetDateTime blockedUntil, int passengers, UUID vehicleId, String vehicleName,
-        String registration, UUID driverId, String driverName, String collectionState, String returnState) {}
+        String registration, UUID driverId, String driverName, String collectionState, String returnState, List<String> problems) {}
     public record CreateAssignmentRequest(@NotBlank String bookingReference, @NotNull UUID vehicleId, @NotNull UUID driverId,
         @NotNull OffsetDateTime startsAt, @NotNull OffsetDateTime endsAt) {}
     public record ChangeAssignmentRequest(@NotNull @Min(0) Long version, @NotNull UUID vehicleId, @NotNull UUID driverId) {}

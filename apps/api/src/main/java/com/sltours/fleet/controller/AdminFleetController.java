@@ -21,6 +21,8 @@ public class AdminFleetController {
     VehicleDetail create(@Valid @RequestBody SaveVehicleRequest request) { return fleet.create(request); }
     @PutMapping("/{id}") @PreAuthorize("hasRole('ADMIN')")
     VehicleDetail update(@PathVariable UUID id, @Valid @RequestBody SaveVehicleRequest request) { return fleet.update(id, request); }
+    @PostMapping("/{id}/genuine") @PreAuthorize("hasRole('ADMIN')")
+    VehicleDetail markGenuine(@PathVariable UUID id) { return fleet.markGenuine(id); }
     @PostMapping(path = "/{id}/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE) @PreAuthorize("hasRole('ADMIN')")
     VehicleDetail addImage(@PathVariable UUID id, @RequestPart("file") MultipartFile file, @RequestParam String altText) {
         return fleet.addImage(id, file, altText);
