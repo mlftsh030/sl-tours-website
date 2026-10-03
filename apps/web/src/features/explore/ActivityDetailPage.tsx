@@ -5,7 +5,9 @@ import { Clock, CloudSun, ExternalLink, HelpCircle, MapPin, ShieldCheck } from "
 import { ErrorState, LoadingState } from "../../components/StateBlocks";
 import { formatAmount } from "../../lib/format";
 import { useDocumentTitle } from "../../lib/useDocumentTitle";
-import { getActivity } from "./exploreApi";
+import { getActivity, listActivities } from "./exploreApi";
+import { ActivityCardView } from "./ActivityCardView";
+import { categoryIcons } from "./categoryVisuals";
 import { categoryLabels, dayList, hhmm, minutesLabel, monthDay, priceStatusText, residencyLabels, shortDate } from "./exploreLabels";
 import type { ActivityPage, PublicPrice } from "../../types/api";
 
@@ -22,16 +24,25 @@ function priceWhen(p: PublicPrice) {
 export function ActivityDetailPage() {
   const { slug = "" } = useParams();
   const activity = useQuery({ queryKey: ["activity", slug], queryFn: () => getActivity(slug), retry: false });
-  useDocumentTitle(activity.data?.seoTitle ?? "Explore Cape Town | SL Tours", activity.data?.seoDescription);
+  const all = useQuery({ queryKey: ["activities"], queryFn: () => listActivities({}) });
+  useDocumentTitle(activity.data?.seoTitle ?? "Things to Do in Cape Town | SL Tours", activity.data?.seoDescription);
   if (activity.isLoading) return <LoadingState label="Loading activity" />;
-  if (activity.isError || !activity.data) return <section className="section"><ErrorState message="This activity could not be found." /><Link to="/explore">All activities</Link></section>;
+  if (activity.isError || !activity.data) return <section className="section explore-state"><ErrorState message="This activity could not be found. It may have been removed or renamed." />
+    <Link className="button button-secondary" to="/explore">Back to Things to Do in Cape Town</Link></section>;
   const a: ActivityPage = activity.data;
   const current = a.prices.filter(p => p.currentlyEffective);
   const upcoming = a.prices.filter(p => !p.currentlyEffective);
+  // Nearby ideas: same area first, then same interest.
+  const others = (all.data ?? []).filter(o => o.slug !== a.slug);
+  const nearby = [...others.filter(o => o.area === a.area), ...others.filter(o => o.area !== a.area && o.category === a.category)].slice(0, 3);
+  const Icon = categoryIcons[a.category];
   return (
     <>
-      <section className="detail-hero" style={{ backgroundImage: `linear-gradient(90deg, rgba(5, 30, 98, .88) 0%, rgba(5, 30, 98, .6) 45%, rgba(5, 30, 98, .15) 100%), url(${a.heroImage ?? "/assets/gallery/41.jpg"})` }}>
+      <section className={`detail-hero${a.heroImage ? "" : " detail-hero-plain"}`} style={a.heroImage ? { backgroundImage: `linear-gradient(90deg, rgba(5, 30, 98, .88) 0%, rgba(5, 30, 98, .6) 45%, rgba(5, 30, 98, .15) 100%), url(${a.heroImage})` } : undefined}>
+        {!a.heroImage && <Icon className="detail-hero-icon" aria-hidden="true" />}
         <div>
+          <nav className="breadcrumbs" aria-label="Breadcrumb"><Link to="/explore">Things to Do in Cape Town</Link><span aria-hidden="true">/</span>
+            <span aria-current="page">{a.title}</span></nav>
           <p className="eyebrow">{categoryLabels[a.category]}</p>
           <h1>{a.title}</h1>
           <p>{a.summary}</p>
@@ -45,8 +56,7 @@ export function ActivityDetailPage() {
       </section>
       <section className="section detail-grid">
         <article>
-          <p className="eyebrow">Overview</p>
-          <h2>{a.title}</h2>
+          <h2>About this experience</h2>
           <p>{a.description}</p>
           <h3>Opening times</h3>
           {a.scheduleType === "SCHEDULE_VARIES" && <p>Times change daily. Check the operator's schedule before you go.</p>}
@@ -69,7 +79,7 @@ export function ActivityDetailPage() {
           {(a.minAge != null || a.accompanimentRule || a.participationRules !== "KNOWN") && <><h3>Who can take part</h3><ul className="activity-extras">
             {a.minAge != null && <li>Minimum age {a.minAge}</li>}{a.accompanimentRule && <li>{a.accompanimentRule}</li>}
             {a.participationRules !== "KNOWN" && <li className="activity-caution">{a.participationRules === "UNKNOWN"
-              ? "Age, height or other limits are not published" : "Limits are only partly published"}{a.participationNote ? `: ${a.participationNote}` : ""}.
+              ? "Age, height or other limits are not published" : "Limits are only partly published"}{a.participationNote ? `: ${a.participationNote.replace(/\.\s*$/, "")}` : ""}.
               Check with the operator before you go.</li>}</ul></>}
         </article>
         <aside className="booking-panel detail-panel">
@@ -90,6 +100,17 @@ export function ActivityDetailPage() {
         <p className="eyebrow">Questions</p>
         <div className="faq-grid">{a.faqs.map(f => <div key={f.question}><HelpCircle aria-hidden="true" /><p><strong>{f.question}</strong><br />{f.answer}</p></div>)}</div>
       </section>}
+      <section className="section explore-next" aria-labelledby="explore-next-title">
+        <div className="home-heading">
+          <div><p className="eyebrow">Keep exploring</p><h2 id="explore-next-title">More things to do{nearby.some(o => o.area === a.area) ? ` near ${a.areaLabel}` : ""}</h2></div>
+          <Link className="home-heading-link" to="/explore">All things to do</Link>
+        </div>
+        {nearby.length > 0 && <div className="package-grid explore-grid">{nearby.map(o => <ActivityCardView key={o.slug} activity={o} />)}</div>}
+        <div className="explore-next-cta">
+          <p>Combine {a.title} with other stops and see the whole day's timings and costs.</p>
+          <Link className="button button-primary" to={`/explore/plan?include=${a.slug}`}>Plan a day with this</Link>
+        </div>
+      </section>
     </>
   );
 }

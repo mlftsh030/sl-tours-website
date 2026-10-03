@@ -24,7 +24,7 @@ describe("Explore Cape Town", () => {
     expect(screen.getByText("not published")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Ice skating" }));
     expect(screen.queryByRole("link", { name: "karting" })).not.toBeInTheDocument();
-    expect(screen.getByText("1 activity")).toBeInTheDocument();
+    expect(screen.getByText(/^1 activity/)).toBeInTheDocument();
   });
 
   it("sends the travellers, residency and budget, and shows unknown costs as unverified", async () => {

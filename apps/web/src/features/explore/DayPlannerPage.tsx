@@ -63,32 +63,51 @@ export function DayPlannerPage() {
     <>
       <PageBanner title="Plan a day in Cape Town" subtitle="A practical route with opening times and every cost spelled out" image="/assets/gallery/41.jpg" />
       <section className="section planner-page">
+        <nav className="breadcrumbs breadcrumbs-light" aria-label="Breadcrumb"><Link to="/explore">Things to Do in Cape Town</Link><span aria-hidden="true">/</span>
+          <span aria-current="page">Plan a day</span></nav>
+        <p className="planner-intro">Tell us when you are free, who is going and what you enjoy. We suggest a route between stops that are open, check age rules,
+          and list every admission, transport and food cost, marking anything we could not confirm.</p>
         <form className="form-surface wide-form" onSubmit={submit}>
           <AssistantLauncher />
           {included && <p className="private-trip-note"><Info aria-hidden="true" />Your plan will include {included.title}.</p>}
-          <div className="form-grid">
-            <label><span>Date</span><input type="date" required min={localDate()} value={form.date} onChange={set("date")} /></label>
-            <label><span>Travellers are</span><select value={form.residency} onChange={set("residency")}>
-              {Object.entries(residencyLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-            <label><span>Start</span><input type="time" required value={form.start} onChange={set("start")} /></label>
-            <label><span>Finish by</span><input type="time" required value={form.end} onChange={set("end")} /></label>
-            <label><span>Adults</span><input type="number" min={1} max={20} required value={form.adults} onChange={set("adults")} /></label>
-            <label><span>Children's ages <em className="optional">(optional)</em></span><input value={form.children} onChange={set("children")} placeholder="e.g. 4, 9" inputMode="numeric" /></label>
-            <label><span>Starting from</span><select value={form.startArea} onChange={set("startArea")}>
-              {(Object.keys(areaLabels) as ActivityArea[]).map(a => <option key={a} value={a}>{areaLabels[a]}</option>)}</select></label>
-            <label><span>Getting around</span><select value={form.transport} onChange={set("transport")}>
-              <option value="OWN_VEHICLE">Own or rented car</option><option value="SL_TOURS_PRIVATE_VEHICLE">SL Tours vehicle with driver</option></select></label>
-            <label><span>Food per person <em className="optional">(optional, rand)</em></span><input inputMode="decimal" value={form.food} onChange={set("food")} placeholder="Leave blank to exclude" /></label>
-            <label><span>Total budget <em className="optional">(optional, rand)</em></span><input inputMode="decimal" value={form.budget} onChange={set("budget")} /></label>
-            <label><span>Number of stops</span><select value={form.maxStops} onChange={set("maxStops")}>{[1, 2, 3, 4, 5].map(n => <option key={n}>{n}</option>)}</select></label>
-          </div>
-          <fieldset><legend>Interests <em className="optional">(optional)</em></legend>
+          <fieldset className="planner-group"><legend>When</legend>
+            <div className="form-grid planner-grid-3">
+              <label><span>Date</span><input type="date" required min={localDate()} value={form.date} onChange={set("date")} /></label>
+              <label><span>Start</span><input type="time" required value={form.start} onChange={set("start")} /></label>
+              <label><span>Finish by</span><input type="time" required value={form.end} onChange={set("end")} /></label>
+            </div>
+          </fieldset>
+          <fieldset className="planner-group"><legend>Who is going</legend>
+            <div className="form-grid planner-grid-3">
+              <label><span>Adults</span><input type="number" min={1} max={20} required value={form.adults} onChange={set("adults")} /></label>
+              <label><span>Children's ages <em className="optional">(optional)</em></span><input value={form.children} onChange={set("children")} placeholder="e.g. 4, 9" inputMode="numeric" /></label>
+              <label><span>Travellers are</span><select value={form.residency} onChange={set("residency")} aria-describedby="residency-hint">
+                {Object.entries(residencyLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+            </div>
+            <p id="residency-hint" className="form-note">Many attractions charge different prices depending on where you live.</p>
+          </fieldset>
+          <fieldset className="planner-group"><legend>Where and how</legend>
+            <div className="form-grid planner-grid-3">
+              <label><span>Starting from</span><select value={form.startArea} onChange={set("startArea")}>
+                {(Object.keys(areaLabels) as ActivityArea[]).map(a => <option key={a} value={a}>{areaLabels[a]}</option>)}</select></label>
+              <label><span>Getting around</span><select value={form.transport} onChange={set("transport")}>
+                <option value="OWN_VEHICLE">Own or rented car</option><option value="SL_TOURS_PRIVATE_VEHICLE">SL Tours vehicle with driver</option></select></label>
+              <label><span>Number of stops</span><select value={form.maxStops} onChange={set("maxStops")}>{[1, 2, 3, 4, 5].map(n => <option key={n}>{n}</option>)}</select></label>
+            </div>
+          </fieldset>
+          <fieldset className="planner-group"><legend>Interests <em className="optional">(optional)</em></legend>
             <div className="choice-grid">{(Object.keys(categoryLabels) as ActivityCategory[]).filter(c => categories.includes(c)).map(c =>
               <label key={c} className="choice"><input type="checkbox" checked={interests.includes(c)}
                 onChange={event => setInterests(list => event.target.checked ? [...list, c] : list.filter(x => x !== c))} /><span>{categoryLabels[c]}</span></label>)}</div>
           </fieldset>
-          <label className="choice planner-only-priced"><input type="checkbox" checked={form.onlyPublished} onChange={event => setForm(f => ({ ...f, onlyPublished: event.target.checked }))} />
-            <span>Only use activities with published prices</span></label>
+          <fieldset className="planner-group"><legend>Budget <em className="optional">(optional)</em></legend>
+            <div className="form-grid">
+              <label><span>Food per person <em className="optional">(optional, rand)</em></span><input inputMode="decimal" value={form.food} onChange={set("food")} placeholder="Leave blank to exclude" /></label>
+              <label><span>Total budget <em className="optional">(optional, rand)</em></span><input inputMode="decimal" value={form.budget} onChange={set("budget")} /></label>
+            </div>
+            <label className="choice planner-only-priced"><input type="checkbox" checked={form.onlyPublished} onChange={event => setForm(f => ({ ...f, onlyPublished: event.target.checked }))} />
+              <span>Only use activities with published prices</span></label>
+          </fieldset>
           {(error || plan.isError) && <ErrorState message={error || plan.error!.message} />}
           <button className="button button-primary" type="submit" disabled={plan.isPending}>{plan.isPending ? "Planning…" : "Plan my day"}</button>
         </form>
