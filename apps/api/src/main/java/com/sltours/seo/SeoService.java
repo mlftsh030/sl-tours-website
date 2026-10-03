@@ -38,7 +38,7 @@ public class SeoService {
         STATIC.put("/partner-with-us", new String[]{"Partner with SL Tours | Referral Partners and Experience Suppliers",
             "Hotels, guesthouses, concierges and travel agents can refer guests to SL Tours. Safari operators, activity providers and guides can propose experiences.",
             "Partner with SL Tours"});
-        STATIC.put("/explore", new String[]{"Explore Cape Town | Activities, Prices and Opening Hours | SL Tours",
+        STATIC.put("/explore", new String[]{"Things to Do in Cape Town | Activities, Prices and Opening Hours | SL Tours",
             "Things to do in Cape Town, from Table Mountain and Boulders Beach to ice skating and go-karting, with prices and hours checked against official sources.", "Explore Cape Town"});
         STATIC.put("/explore/plan", new String[]{"Plan a Day in Cape Town | SL Tours",
             "Build a practical day plan with opening times, travel between areas and transparent admission, transport and food costs.", "Plan a day in Cape Town"});
@@ -125,7 +125,8 @@ public class SeoService {
             body.append("</ul><p><a href=\"/explore/plan\">Plan a day</a></p>");
         }
         if (path.equals("/")) jsonLd.add(organisation());
-        body.append("<nav><a href=\"/experiences\">Our Tours</a> <a href=\"/explore\">Explore Cape Town</a> <a href=\"/plan-my-trip\">Plan My Trip</a> ")
+        body.append("<nav><a href=\"/\">Home</a> <a href=\"/about\">About</a> <a href=\"/experiences\">Our Tours</a> ")
+            .append("<a href=\"/book-private-trip\">Private Trips</a> <a href=\"/gallery\">Gallery</a> <a href=\"/explore\">Things to Do in Cape Town</a> ")
             .append("<a href=\"/contact\">Contact Us</a></nav></main>");
         return new Page(meta[0], meta[1], path, true, null, jsonLd, body.toString());
     }
@@ -133,7 +134,7 @@ public class SeoService {
     private Page activityPage(Activity a) {
         String path = "/explore/" + a.getSlug();
         LocalDate today = ActivityViews.today();
-        StringBuilder b = new StringBuilder("<main><article><p><a href=\"/explore\">Explore Cape Town</a></p><h1>").append(esc(a.getTitle())).append("</h1>")
+        StringBuilder b = new StringBuilder("<main><article><p><a href=\"/explore\">Things to Do in Cape Town</a></p><h1>").append(esc(a.getTitle())).append("</h1>")
             .append("<p>").append(esc(a.getSummary())).append("</p><p>").append(esc(a.getDescription())).append("</p><dl>")
             .append("<dt>Area</dt><dd>").append(esc(ActivityViews.areaLabel(a.getArea()))).append("</dd>");
         if (a.getAddress() != null) b.append("<dt>Address</dt><dd>").append(esc(a.getAddress())).append("</dd>");
@@ -164,7 +165,7 @@ public class SeoService {
         if (a.getHeroImage() != null) ld.append(",\"image\":").append(json(baseUrl + a.getHeroImage()));
         ld.append("}");
         return new Page(ActivityViews.seoTitle(a), ActivityViews.seoDescription(a), path, true, a.getHeroImage(),
-            List.of(ld.toString(), breadcrumbs("Explore Cape Town", "/explore", a.getTitle(), path)), b.toString());
+            List.of(ld.toString(), breadcrumbs("Things to Do in Cape Town", "/explore", a.getTitle(), path)), b.toString());
     }
 
     private Page tourPage(Tour t) {

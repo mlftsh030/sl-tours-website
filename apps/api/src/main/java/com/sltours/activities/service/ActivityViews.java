@@ -53,10 +53,13 @@ public class ActivityViews {
     }
 
     public ActivityCard card(Activity a, LocalDate on) {
-        Optional<ActivityPriceRule> from = a.getPriceStatus() != PriceStatus.VERIFIED ? Optional.empty() : a.getPriceRules().stream()
+        // "From" uses standard admission (the rules marked as the estimate default), so add-ons such as a spectator fee are
+        // never shown as the starting price; activities without defaults fall back to all adult prices.
+        List<ActivityPriceRule> adult = a.getPriceStatus() != PriceStatus.VERIFIED ? List.of() : a.getPriceRules().stream()
             .filter(p -> p.effectiveOn(on) && p.getUnit() == Unit.PER_PERSON && p.getAmountCents() > 0
-                && (p.getAudience() == Audience.ADULT || p.getAudience() == Audience.EVERYONE))
-            .min(Comparator.comparingInt(ActivityPriceRule::getAmountCents));
+                && (p.getAudience() == Audience.ADULT || p.getAudience() == Audience.EVERYONE)).toList();
+        List<ActivityPriceRule> standard = adult.stream().filter(ActivityPriceRule::isEstimateDefault).toList();
+        Optional<ActivityPriceRule> from = (standard.isEmpty() ? adult : standard).stream().min(Comparator.comparingInt(ActivityPriceRule::getAmountCents));
         return new ActivityCard(a.getSlug(), a.getTitle(), a.getCategory(), a.getArea(), areaLabel(a.getArea()), a.getSummary(), a.getDurationMinutes(),
             a.getPriceStatus(), from.map(ActivityPriceRule::getAmountCents).orElse(null), from.map(ActivityPriceRule::getLabel).orElse(null),
             a.getHeroImage(), a.getHeroImageAlt(), a.isIndoor(), a.isWeatherDependent(), a.getLastVerifiedOn());
@@ -119,7 +122,7 @@ public class ActivityViews {
     }
 
     public static String seoTitle(Activity a) {
-        return a.getSeoTitle() != null && !a.getSeoTitle().isBlank() ? a.getSeoTitle() : a.getTitle() + " | Explore Cape Town | SL Tours";
+        return a.getSeoTitle() != null && !a.getSeoTitle().isBlank() ? a.getSeoTitle() : a.getTitle() + " | Things to Do in Cape Town | SL Tours";
     }
     public static String seoDescription(Activity a) {
         return a.getSeoDescription() != null && !a.getSeoDescription().isBlank() ? a.getSeoDescription() : a.getSummary();

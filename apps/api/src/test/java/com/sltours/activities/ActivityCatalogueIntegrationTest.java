@@ -25,6 +25,8 @@ class ActivityCatalogueIntegrationTest extends PostgresIntegrationTest {
             .contains("table-mountain-aerial-cableway", "grandwest-ice-station", "century-karting", "the-labia-theatre")
             .doesNotContain("kenilworth-karting", "lions-head-hike", "muizenberg-beach");
         assertThat(activities.list(Category.ICE_SKATING, null, null)).extracting(ActivityCard::slug).containsExactly("grandwest-ice-station");
+        // The non-skater fee is an add-on, not the starting price.
+        assertThat(activities.list(Category.ICE_SKATING, null, null).get(0).fromPriceCents()).isEqualTo(7000);
         ActivityPage cableway = activities.get("table-mountain-aerial-cableway");
         assertThat(cableway.sources()).isNotEmpty().allSatisfy(s -> assertThat(s.url()).startsWith("https://www.tablemountain.net/"));
         assertThat(cableway.prices()).anySatisfy(p -> {
@@ -71,7 +73,7 @@ class ActivityCatalogueIntegrationTest extends PostgresIntegrationTest {
 
         assertThat(seo.sitemap()).contains("/explore/" + slug);
         String head = seo.head("/explore/" + slug + "?utm=x");
-        assertThat(head).contains("<title>Test Rooftop Cinema | Explore Cape Town | SL Tours</title>", "rel=\"canonical\" href=\"https://sl-tours.com/explore/" + slug + "\"",
+        assertThat(head).contains("<title>Test Rooftop Cinema | Things to Do in Cape Town | SL Tours</title>", "rel=\"canonical\" href=\"https://sl-tours.com/explore/" + slug + "\"",
             "\"@type\":\"TouristAttraction\"").doesNotContain("FAQPage", "noindex");
         assertThat(seo.body("/explore/" + slug)).contains("<h1>Test Rooftop Cinema</h1>", "Ticket: R150.00", "Is it outdoors?");
 
