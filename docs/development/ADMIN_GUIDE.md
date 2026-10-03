@@ -94,6 +94,10 @@ Customer contact summaries group booking contact email addresses for staff conve
   an address, hours when relevant and a source for every price. Problems are listed above the form.
 - Use **Price status** to say when the operator does not publish prices or sets them at booking; never enter a guessed price.
 - Publishing, unpublishing and edits update the public page and sitemap immediately ([SEO](../operations/SEO.md)).
+- Record doubts instead of guessing: use **Unresolved doubt** when official pages disagree or leave eligibility undefined
+  (the figure becomes an estimate), **Observed for** on sessions seen only for particular dates, **Promotion** (with an end
+  date) for temporary offers, and **Participation limits** when age, height or similar limits are not published.
+- "Shown to visitors as unconfirmed" lists overdue re-checks and unresolved doubts for each activity.
 - **Day-planner assumptions** (road factor, average speed, parking buffer, lunch length) are planning estimates shown to visitors.
 
 ## Development sample data

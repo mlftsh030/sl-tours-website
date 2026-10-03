@@ -40,6 +40,8 @@ Migration V9 adds PostgreSQL exclusion constraints that prevent double-booking v
 - `docker-compose.yml` defaults to the `dev` profile for local use; set the variables above for any shared deployment.
 - Set `SLTOURS_PUBLIC_BASE_URL` to the public origin (default `https://sl-tours.com`); it is used for canonical links,
   Open Graph URLs and the sitemap.
+- The planning assistant is off unless configured; see [Planning Assistant](PLANNING_ASSISTANT.md). Never set
+  `SLTOURS_ASSISTANT_PROVIDER=mock` outside development (the API refuses to start).
 - Mount the `media-data` volume and back it up with the database ([Media Storage](MEDIA_STORAGE.md)).
 - Migration V2 inserts sample bookings, people and vehicles in every environment. V12 flags them and production
   excludes them from inventory and reporting; see [Development Sample Data](DEVELOPMENT_SEED_DATA.md) for removal.

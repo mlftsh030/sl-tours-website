@@ -21,6 +21,8 @@
 | Payment data exposure | Legal/compliance risk | Never store raw card details |
 | Insecure uploads | Malware or data exposure | Uploads not enabled; require MIME/extension/size scanning before launch |
 | Sensitive URLs | Trip privacy leak | Avoid predictable trip IDs; use auth/token strategy |
+| Assistant prompt injection | Visitor or catalogue text steers the assistant or seeks private data | Six public catalogue/planner tools only, server-validated inputs; replies checked so amounts, times, discounts and booking claims come from structured tool results; plans rendered from planner data; enquiries need explicit visitor confirmation (`docs/operations/PLANNING_ASSISTANT.md`) |
+| Assistant cost abuse | Excessive model spend | Per-session and per-address hourly limits, conversation length and count caps, daily request cap, daily and monthly spending caps checked before each model request |
 
 ## Highest Priority Gaps
 

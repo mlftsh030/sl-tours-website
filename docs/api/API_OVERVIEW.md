@@ -25,6 +25,11 @@ All POST/PUT/PATCH/DELETE requests require the CSRF header, including public sub
 - `POST /api/v1/private-trips/quote-requests`: manual-pricing request, stored as an enquiry.
 - `GET /api/v1/activities?category=&area=&q=`: published activities as cards; `GET /api/v1/activities/{slug}`: activity page with current and announced prices, extras, hours, FAQs and sources.
 - `POST /api/v1/itineraries`: calculates a day plan (nothing stored); see `docs/product/EXPLORE_CATALOGUE.md`.
+- Planning assistant (public, CSRF-protected, session-bound; see `docs/operations/PLANNING_ASSISTANT.md`): `GET /api/v1/assistant/status`,
+  `POST /api/v1/assistant/conversations`, `POST /api/v1/assistant/conversations/{id}/messages` `{message}`,
+  `POST /api/v1/assistant/conversations/{id}/enquiry` `{optionId, name, email, phone?, note?, confirmed: true, idempotencyKey}`,
+  `DELETE /api/v1/assistant/conversations/{id}`. 429 when limits are reached; 503 when chat is disabled.
+- Itineraries accept an optional `exclude` list of activity slugs and return per-stop `cautions` and a `confidence` summary.
 - `GET /api/v1/seo/head?path=`, `GET /api/v1/seo/body?path=`, `GET /api/v1/seo/sitemap.xml`: server-rendered head tags, core content and sitemap (used by Nginx).
 - `GET /api/v1/public/site-images?slot=HOME_HERO|GALLERY`, `GET /api/v1/public/media/{id}` (PUBLIC files only).
 

@@ -23,6 +23,24 @@ verified from an accessible official page stay drafts.
 `price_status` distinguishes **verified** prices, prices **set at booking**, **not published** and **free**. Only verified
 prices are used as costs; the others appear as "not verified" in itineraries.
 
+## Uncertainty and freshness
+
+Official information is not always complete or consistent. The catalogue records that explicitly, and plans never present
+it as confirmed:
+
+| Situation | Stored as | Effect in plans and pages |
+|---|---|---|
+| Official sources conflict, or eligibility is undefined | `uncertainty_note` on a price, extra or hours row | Price shown as an **estimate**; hours flagged "not confirmed"; note shown on the page |
+| Sessions sampled for particular days | Rows limited to the weekdays seen, optional `valid_from`/`valid_to` | Not used for other days; planner says "no verified sessions for Wednesdays" |
+| Prices past their end date | Effective dates | **Not verified**; the last published amount stays visible, labelled as ended |
+| Participation limits not published | `participation_rules` UNKNOWN / PARTLY_KNOWN with a note | Stop caution; plan says suitability is not confirmed |
+| Information past its re-check period | Per-row check dates | Prices become estimates; hours and sessions carry cautions |
+
+Re-check periods are configurable (`sltours.catalogue.freshness`). Defaults: standard prices 180 days, promotional prices 14
+days (promotions need an end date), additional costs 180 days, opening hours 120 days, sessions 30 days, participation rules
+365 days. The 180-day overall verification still gates publishing. Every plan carries a `confidence` summary (prices,
+times, suitability) used by the planner page and the assistant.
+
 ## Day planner
 
 Inputs: date, start and finish times, adults, each child's age, residency (SA, SADC, other African, international),
@@ -44,4 +62,5 @@ The planner:
 Travel times are planning estimates (straight-line distance between area centres × road factor at an average speed plus
 a buffer), editable under **Explore activities → Day-planner assumptions**, and shown with every plan.
 
-The optional AI itinerary assistant and the partnership system are later phases and are not connected.
+The optional planning assistant ([Planning Assistant](../operations/PLANNING_ASSISTANT.md)) explains planner results in a chat
+and can be switched off without affecting the planner. The partnership system is a later phase.

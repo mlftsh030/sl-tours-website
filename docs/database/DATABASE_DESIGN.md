@@ -70,6 +70,9 @@ Payment statuses: `PENDING`, `PROCESSING`, `PAID`, `FAILED`, `REFUNDED`, `PARTIA
 | V13 `activity_catalogue` | `activities`, `activity_sources`, `activity_price_rules`, `activity_extras`, `activity_hours`, `activity_faqs`; day-planner `planning_areas` and `planning_settings`. |
 | V14 `seed_verified_activities` | 18 published and 5 draft activities researched on 3 Oct 2026, with sources, price rules, hours and FAQs. |
 
+| V15 `catalogue_uncertainty` | Uncertainty notes on prices, extras and hours; promotional prices; per-row check dates and observed date ranges for hours; participation-rule status. Records the conflicts and sampled sessions found in the October 2026 research. |
+| V16 `planning_assistant` | `ASSISTANT` enquiry source; `assistant_usage_days` daily aggregate counters (no message content). |
+
 Assignment statuses: `SCHEDULED`, `AWAITING_RELEASE`, `RELEASED`, `RETURNED`, `CLOSED`, `CANCELLED`.
 Enquiry statuses: `NEW`, `IN_PROGRESS`, `AWAITING_CUSTOMER`, `CONVERTED`, `CLOSED`.
 V9 runs `create extension if not exists btree_gist`. Two separate conditions must hold; see

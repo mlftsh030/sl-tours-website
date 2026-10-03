@@ -25,3 +25,12 @@ This is an engineering overview, not legal advice.
 - Inspection photos may show bystanders or number plates; drivers photograph the vehicle only.
 - Drivers see a customer's name and phone number only for their own assignments, and no customer email or booking history.
 - Retention periods for selfies, inspection photos and driver documents must be decided by SL Tours; see `docs/operations/MEDIA_STORAGE.md`.
+
+## Planning assistant
+
+- Chat messages are processed in memory only, bound to the visitor's session, and discarded when the panel is closed, after
+  the idle timeout or on restart. They are not logged or stored in the database, and SL Tours does not use them for training.
+- Messages are sent to the configured model provider to generate replies. Name the provider in the privacy notice and confirm
+  its retention terms before enabling live chat.
+- Contact details are collected only in the confirmation form when a visitor chooses to send a plan; that enquiry follows
+  the normal enquiry retention policy.

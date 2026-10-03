@@ -47,6 +47,11 @@ Re-verify before relying on any figure after its effective period or after six m
 
 ## Verification gaps to close
 
+Migration V15 records these in the data: conflicting figures carry an uncertainty note (estimates until resolved), Ice Station
+weekday sessions apply to Tuesdays only, and Century Karting, the Ice Station and the Labia have their participation limits
+marked as not or only partly published.
+
+
 - **SANParks 2026/27 conservation fees** (Cape Point, Boulders) were not published on 3 Oct 2026; current fees end 31 Oct 2026. Itineraries dated from 1 Nov 2026 show these fees as unverified until an admin adds the new rules.
 - **Century Karting** publishes no prices or age/height limits online; the pricing link was broken.
 - **Groot Constantia** tasting prices and **District Six Museum** admission are only visible inside booking flows or not at all.
