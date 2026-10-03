@@ -20,6 +20,7 @@ public class ActivityExtra {
     private UUID sourceId;
     @Column(nullable = false) private LocalDate verifiedOn;
     @Column(nullable = false) private int sortOrder;
+    @Column(length = 400) private String uncertaintyNote;
     protected ActivityExtra() {}
     public ActivityExtra(Activity activity) { this.activity = activity; }
     public UUID getId() { return id; }
@@ -32,6 +33,8 @@ public class ActivityExtra {
     public LocalDate getEffectiveTo() { return effectiveTo; }
     public UUID getSourceId() { return sourceId; }
     public LocalDate getVerifiedOn() { return verifiedOn; }
+    public String getUncertaintyNote() { return uncertaintyNote; }
+    public void setUncertaintyNote(String v) { uncertaintyNote = v; }
     public void set(String label, int amountCents, Unit unit, boolean mandatory, String conditions, LocalDate effectiveFrom, LocalDate effectiveTo,
             UUID sourceId, LocalDate verifiedOn, int sortOrder) {
         this.label = label; this.amountCents = amountCents; this.unit = unit; this.mandatory = mandatory; this.conditions = conditions;

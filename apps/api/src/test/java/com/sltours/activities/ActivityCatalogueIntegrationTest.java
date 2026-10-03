@@ -38,7 +38,7 @@ class ActivityCatalogueIntegrationTest extends PostgresIntegrationTest {
         LocalDate after = ActivityViews.today().isAfter(LocalDate.of(2026, 10, 31)) ? ActivityViews.today().plusDays(1) : LocalDate.of(2026, 11, 2);
         if (after.getDayOfWeek() == DayOfWeek.SUNDAY) after = after.plusDays(1);
         var request = new ItineraryRequest(after, LocalTime.of(8, 0), LocalTime.of(17, 0), 2, List.of(), Residency.INTERNATIONAL, List.of(),
-            Area.CITY_CENTRE, Transport.OWN_VEHICLE, null, 500_000, 1, false, List.of("cape-point"));
+            Area.CITY_CENTRE, Transport.OWN_VEHICLE, null, 500_000, 1, false, List.of("cape-point"), null);
         Itinerary plan = itineraries.plan(request);
         Stop capePoint = plan.stops().stream().filter(s -> "cape-point".equals(s.slug())).findFirst().orElseThrow();
         assertThat(capePoint.costs()).anySatisfy(l -> { assertThat(l.kind()).isEqualTo(CostKind.UNKNOWN); assertThat(l.detail()).contains("2026-10-31"); });
@@ -49,7 +49,7 @@ class ActivityCatalogueIntegrationTest extends PostgresIntegrationTest {
         return new SaveActivityRequest(version, slug, "Test Rooftop Cinema", Category.CINEMA, "Outdoor films on a rooftop.", "Screenings in summer.",
             Area.CITY_CENTRE, "1 Test Street, Cape Town", "https://example.org", 120, ScheduleType.SCHEDULE_VARIES, true, false, null, null, null,
             prices.isEmpty() ? PriceStatus.NOT_PUBLISHED : PriceStatus.VERIFIED, "Test notes", null, null, null, null, sources, prices, List.of(), List.of(),
-            List.of(new Faq("Is it outdoors?", "Yes, screenings are outdoors.")));
+            List.of(new Faq("Is it outdoors?", "Yes, screenings are outdoors.")), ParticipationRules.KNOWN, null);
     }
 
     @Test void publishingNeedsSourcesAndVerificationAndRefreshesSeoAndSitemapImmediately() {
@@ -62,7 +62,7 @@ class ActivityCatalogueIntegrationTest extends PostgresIntegrationTest {
         UUID source = UUID.randomUUID();
         var withSource = draft(slug, created.version(), List.of(new Source(source, "https://example.org/prices", "Rooftop Cinema",
             SourceType.OFFICIAL_OPERATOR, "Ticket price", LocalDate.now())), List.of(new PriceRule("Ticket", Audience.EVERYONE, null, null, Residency.ANY,
-            Unit.PER_PERSON, 15000, null, null, null, null, true, null, null, source, LocalDate.now())));
+            Unit.PER_PERSON, 15000, null, null, null, null, true, null, null, source, LocalDate.now(), null, false)));
         AdminActivity sourced = admin.update(created.id(), withSource);
         assertThat(sourced.publishProblems()).containsExactly("Mark the activity as verified after checking the sources");
         AdminActivity verified = admin.verify(created.id(), sourced.version());
@@ -88,5 +88,30 @@ class ActivityCatalogueIntegrationTest extends PostgresIntegrationTest {
         assertThat(seo.head("/nope\"><script>")).contains("noindex").doesNotContain("<script>alert");
         assertThat(seo.head("/")).contains("\"@type\":\"TravelAgency\"").doesNotContain("makesOffer");
         assertThat(seo.sitemap()).contains("https://sl-tours.com/explore</loc>", "/experiences/cape-peninsula-journey");
+    }
+
+    @Test void officialUncertaintiesAreCarriedIntoPagesAndPlans() {
+        ActivityPage ice = activities.get("grandwest-ice-station");
+        assertThat(ice.hours()).extracting(PublicHours::daysOfWeek).containsOnly("TUE", "SAT,SUN", "SAT");
+        assertThat(ice.participationRules()).isEqualTo(ParticipationRules.PARTLY_KNOWN);
+        assertThat(activities.get("century-karting").participationRules()).isEqualTo(ParticipationRules.UNKNOWN);
+        assertThat(activities.get("castle-of-good-hope").hours()).allSatisfy(h -> assertThat(h.caution()).contains("15:15", "15:45"));
+        assertThat(activities.get("the-labia-theatre").prices()).filteredOn(p -> p.audience() == Audience.CHILD)
+            .singleElement().satisfies(p -> assertThat(p.caution()).contains("concession ages"));
+        assertThat(activities.get("neighbourgoods-market").extras()).singleElement().satisfies(x -> assertThat(x.caution()).contains("R10", "R20"));
+
+        LocalDate wednesday = ActivityViews.today().plusDays(2);
+        while (wednesday.getDayOfWeek() != DayOfWeek.WEDNESDAY) wednesday = wednesday.plusDays(1);
+        var iceOnWednesday = new ItineraryRequest(wednesday, LocalTime.of(9, 0), LocalTime.of(18, 0), 2, List.of(10), Residency.SA_RESIDENT, List.of(),
+            Area.NORTHERN_SUBURBS, Transport.OWN_VEHICLE, null, null, 1, false, List.of("grandwest-ice-station"), null);
+        assertThat(itineraries.plan(iceOnWednesday).skipped()).anySatisfy(s -> assertThat(s).contains("no verified opening hours or sessions for Wednesdays"));
+
+        var cinema = new ItineraryRequest(wednesday, LocalTime.of(14, 0), LocalTime.of(20, 0), 1, List.of(10), Residency.SA_RESIDENT, List.of(),
+            Area.CITY_CENTRE, Transport.OWN_VEHICLE, null, 100_000, 1, false, List.of("the-labia-theatre"), null);
+        Itinerary plan = itineraries.plan(cinema);
+        Stop labia = plan.stops().stream().filter(s -> "the-labia-theatre".equals(s.slug())).findFirst().orElseThrow();
+        assertThat(labia.costs()).anySatisfy(l -> { assertThat(l.label()).contains("child"); assertThat(l.kind()).isEqualTo(CostKind.ESTIMATE); });
+        assertThat(plan.verdict()).isEqualTo(Verdict.ESTIMATED_WITHIN_BUDGET);
+        assertThat(plan.confidence().suitabilityConfirmed()).isFalse();
     }
 }

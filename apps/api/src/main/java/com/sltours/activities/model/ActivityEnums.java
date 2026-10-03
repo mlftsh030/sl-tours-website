@@ -13,4 +13,6 @@ public final class ActivityEnums {
     public enum Audience { EVERYONE, ADULT, CHILD, INFANT, SENIOR, STUDENT, FAMILY, GROUP }
     public enum Residency { ANY, SA_RESIDENT, SADC, AFRICAN, INTERNATIONAL }
     public enum Unit { PER_PERSON, PER_VEHICLE, PER_GROUP, PER_ITEM }
+    /** Whether the operator publishes participation limits (age, height, health): unknown limits block suitability claims. */
+    public enum ParticipationRules { KNOWN, PARTLY_KNOWN, UNKNOWN }
 }

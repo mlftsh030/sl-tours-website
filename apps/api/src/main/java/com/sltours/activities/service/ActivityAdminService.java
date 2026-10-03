@@ -105,6 +105,9 @@ public class ActivityAdminService {
         a.setIndoor(r.indoor()); a.setMinAge(r.minAge()); a.setAccompanimentRule(trim(r.accompanimentRule())); a.setBookingNotes(trim(r.bookingNotes()));
         a.setPriceStatus(r.priceStatus()); a.setVerificationNotes(trim(r.verificationNotes())); a.setHeroImage(trim(r.heroImage()));
         a.setHeroImageAlt(trim(r.heroImageAlt())); a.setSeoTitle(trim(r.seoTitle())); a.setSeoDescription(trim(r.seoDescription()));
+        a.setParticipationRules(r.participationRules()); a.setParticipationNote(trim(r.participationNote()));
+        if (r.participationRules() != ParticipationRules.KNOWN && a.getParticipationNote() == null)
+            throw new IllegalArgumentException("Explain which participation limits are not published");
 
         // Replace child rows; flush the removals first so re-used source ids do not collide.
         a.getSources().clear(); a.getPriceRules().clear(); a.getExtras().clear(); a.getHours().clear(); a.getFaqs().clear();
@@ -130,6 +133,8 @@ public class ActivityAdminService {
             ActivityPriceRule rule = new ActivityPriceRule(a);
             rule.set(p.label().trim(), p.audience(), p.minAge(), p.maxAge(), p.residency(), p.unit(), p.amountCents(), DayRules.normalize(p.daysOfWeek()),
                 p.timeFrom(), p.timeTo(), trim(p.conditions()), p.estimateDefault(), p.effectiveFrom(), p.effectiveTo(), p.sourceId(), p.verifiedOn(), i);
+            rule.setQualifiers(trim(p.uncertaintyNote()), p.promotional());
+            if (p.promotional() && p.effectiveTo() == null) throw new IllegalArgumentException("Price \"" + p.label() + "\": give the promotion's end date");
             a.getPriceRules().add(rule);
         }
         for (int i = 0; i < r.extras().size(); i++) {
@@ -137,6 +142,7 @@ public class ActivityAdminService {
             checkSource(x.sourceId(), sourceIds, x.label());
             ActivityExtra extra = new ActivityExtra(a);
             extra.set(x.label().trim(), x.amountCents(), x.unit(), x.mandatory(), trim(x.conditions()), x.effectiveFrom(), x.effectiveTo(), x.sourceId(), x.verifiedOn(), i);
+            extra.setUncertaintyNote(trim(x.uncertaintyNote()));
             a.getExtras().add(extra);
         }
         for (int i = 0; i < r.hours().size(); i++) {
@@ -147,6 +153,8 @@ public class ActivityAdminService {
             ActivityHours hours = new ActivityHours(a);
             hours.set(trim(h.seasonLabel()), h.seasonStart(), h.seasonEnd(), DayRules.normalize(h.daysOfWeek()), h.opens(), h.closes(), h.lastEntry(),
                 trim(h.notes()), h.sourceId(), i);
+            if (h.validFrom() != null && h.validTo() != null && h.validFrom().isAfter(h.validTo())) throw new IllegalArgumentException("Hours: valid dates are reversed");
+            hours.setVerification(h.verifiedOn(), trim(h.uncertaintyNote()), h.validFrom(), h.validTo());
             a.getHours().add(hours);
         }
         for (int i = 0; i < r.faqs().size(); i++) a.getFaqs().add(new ActivityFaq(a, r.faqs().get(i).question().trim(), r.faqs().get(i).answer().trim(), i));

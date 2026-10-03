@@ -136,9 +136,11 @@ public class SeoService {
         List<ActivityPriceRule> current = a.getPriceRules().stream().filter(p -> p.effectiveOn(today)).toList();
         if (!current.isEmpty()) {
             b.append("<h2>Prices</h2><ul>");
-            current.forEach(p -> b.append("<li>").append(esc(p.getLabel())).append(": R").append(String.format(Locale.ROOT, "%.2f", p.getAmountCents() / 100.0)).append("</li>"));
+            current.forEach(p -> b.append("<li>").append(esc(p.getLabel())).append(": R").append(String.format(Locale.ROOT, "%.2f", p.getAmountCents() / 100.0))
+                .append(p.getUncertaintyNote() == null ? "" : " (not confirmed: " + esc(p.getUncertaintyNote()) + ")").append("</li>"));
             b.append("</ul>");
         }
+        if (a.getParticipationNote() != null) b.append("<p>").append(esc(a.getParticipationNote())).append("</p>");
         if (a.getLastVerifiedOn() != null) b.append("<p>Information checked against official sources on ").append(a.getLastVerifiedOn()).append(".</p>");
         if (!a.getFaqs().isEmpty()) {
             b.append("<h2>Questions</h2><dl>");

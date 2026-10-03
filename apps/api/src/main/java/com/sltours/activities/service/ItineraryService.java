@@ -14,20 +14,23 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Builds a one-day plan from the verified catalogue. Every cost is labelled: VERIFIED (published price effective on the date),
  * ASSUMPTION (a fixed price with an assumed quantity, or the visitor's own food allowance), ESTIMATE (e.g. a sample vehicle
- * rate), UNKNOWN (no verified price for that date) or EXCLUDED (not estimated, such as fuel). A plan is only said to fit
- * the budget when nothing is unknown.
+ * rate, a price whose official sources conflict, or one not re-checked within its freshness period), UNKNOWN (no verified
+ * price for that date) or EXCLUDED (not estimated, such as fuel). A plan is only said to fit the budget when nothing is
+ * unknown, and only said to fit firmly when nothing is an estimate. Unconfirmed hours, sessions and participation limits
+ * are reported as cautions and in {@link Confidence}, never as confirmed.
  */
 @Service
 public class ItineraryService {
     private final ActivityService activities;
     private final PlanningService planning;
     private final PrivateTripService privateTrips;
-    public ItineraryService(ActivityService activities, PlanningService planning, PrivateTripService privateTrips) {
-        this.activities = activities; this.planning = planning; this.privateTrips = privateTrips;
+    private final CatalogueFreshness freshness;
+    public ItineraryService(ActivityService activities, PlanningService planning, PrivateTripService privateTrips, CatalogueFreshness freshness) {
+        this.activities = activities; this.planning = planning; this.privateTrips = privateTrips; this.freshness = freshness;
     }
 
     record Traveller(Integer age) { boolean adult() { return age == null; } }
-    record Slot(LocalTime start, LocalTime end, String note) {}
+    record Slot(LocalTime start, LocalTime end, String note, ActivityHours row) {}
     record StopCost(List<CostLine> lines, String note) {
         int known() { return lines.stream().filter(l -> l.amountCents() != null && l.kind() != CostKind.EXCLUDED).mapToInt(CostLine::amountCents).sum(); }
     }
@@ -60,6 +63,7 @@ public class ItineraryService {
         List<Activity> candidates = new ArrayList<>();
         for (Activity a : activities.published()) {
             boolean required = must.contains(a.getSlug());
+            if (!required && r.exclude().contains(a.getSlug())) continue;
             if (!required && !r.interests().isEmpty() && !r.interests().contains(a.getCategory())) continue;
             if (a.getMinAge() != null && youngest != null && youngest < a.getMinAge()) { skipped.add(a.getTitle() + ": minimum age " + a.getMinAge()); continue; }
             if (r.onlyPublishedPrices() && !required && a.getPriceStatus() != PriceStatus.VERIFIED && a.getPriceStatus() != PriceStatus.FREE) continue;
@@ -93,23 +97,27 @@ public class ItineraryService {
             if (best == null) break;
             List<String> notes = notes(best, bestSlot, bestCost);
             stops.add(new Stop(stops.size() + 1, StopType.ACTIVITY, best.getSlug(), best.getTitle(), best.getArea(), ActivityViews.areaLabel(best.getArea()),
-                bestSlot.start(), bestSlot.end(), bestTravel, notes, bestCost.lines()));
+                bestSlot.start(), bestSlot.end(), bestTravel, notes, bestCost.lines(), cautions(best, bestSlot, youngest != null)));
             spent += bestCost.known();
             time = bestSlot.end(); current = best.getArea();
             candidates.remove(best);
         }
-        for (Activity a : candidates) if (must.contains(a.getSlug())) skipped.add(a.getTitle() + ": does not fit the times you chose");
+        for (Activity a : candidates) if (must.contains(a.getSlug())) skipped.add(a.getTitle() + ": " + (hasNoHoursOn(a, r.date())
+            ? "no verified opening hours or sessions for " + r.date().getDayOfWeek().getDisplayName(java.time.format.TextStyle.FULL, Locale.ENGLISH) + "s"
+            : "does not fit the times you chose"));
         if (stops.stream().noneMatch(s -> s.type() == StopType.ACTIVITY))
             warnings.add("No published activity fits these dates, times, ages and interests. Try a longer day, other interests or another date.");
 
         int back = PlanningService.travelMinutes(areas.get(current), areas.get(r.startArea()), settings);
         LocalTime home = time.plusMinutes(back);
         stops.add(new Stop(stops.size() + 1, StopType.RETURN, null, "Return to " + areas.get(r.startArea()).label(), r.startArea(),
-            ActivityViews.areaLabel(r.startArea()), time, home, back, home.isAfter(r.endTime()) ? List.of("Arrives after your chosen end time") : List.of(), List.of()));
+            ActivityViews.areaLabel(r.startArea()), time, home, back, home.isAfter(r.endTime()) ? List.of("Arrives after your chosen end time") : List.of(), List.of(),
+            List.of()));
         if (home.isAfter(r.endTime())) warnings.add("The return journey ends at " + home + ", after your chosen end time.");
 
         List<CostLine> all = new ArrayList<>(food); all.addAll(transport); stops.forEach(s -> all.addAll(s.costs()));
         Totals totals = totals(all);
+        Confidence confidence = confidence(stops, all);
         Verdict verdict; String message;
         if (r.budgetCents() == null) { verdict = Verdict.NO_BUDGET; message = "No budget set. Known costs are shown below."; }
         else if (totals.unknownItems() > 0) { verdict = Verdict.CANNOT_CONFIRM;
@@ -120,11 +128,13 @@ public class ItineraryService {
         else { verdict = Verdict.WITHIN_BUDGET;
             message = "Fits your budget using prices published by the operators for this date and the assumptions listed. Prices can change; check before you go."; }
         if (!exclusions.isEmpty() && r.budgetCents() != null) message += " Not included: " + String.join(", ", exclusions) + ".";
+        if (!confidence.scheduleConfirmed()) message += " Some opening times or sessions are not confirmed; check them before you go.";
+        if (!confidence.suitabilityConfirmed()) message += " Suitability is not confirmed for at least one stop: its participation limits are not published or not recently checked.";
 
         String who = r.adults() + (r.adults() == 1 ? " adult" : " adults") + (r.childAges().isEmpty() ? "" : ", children aged "
             + r.childAges().stream().map(String::valueOf).collect(Collectors.joining(", ")));
         return new Itinerary(r.date(), who, stops, transport, food, totals, r.budgetCents(), verdict, message, dedupe(assumptions), exclusions,
-            dedupe(warnings), skipped);
+            dedupe(warnings), skipped, confidence);
     }
 
     /** Earliest feasible slot on the date at or after the arrival time, or empty when the activity cannot fit. */
@@ -137,22 +147,22 @@ public class ItineraryService {
                     LocalTime latest = h.getCloses().minusMinutes(duration);
                     if (h.getLastEntry() != null && h.getLastEntry().isBefore(latest)) latest = h.getLastEntry();
                     LocalTime end = start.plusMinutes(duration);
-                    return start.isAfter(latest) || end.isAfter(endOfDay) || end.isBefore(start) ? null : new Slot(start, end, null);
+                    return start.isAfter(latest) || end.isAfter(endOfDay) || end.isBefore(start) ? null : new Slot(start, end, null, h);
                 }).filter(Objects::nonNull).min(Comparator.comparing(Slot::start));
             }
             case SESSIONS -> {
                 return a.getHours().stream().filter(h -> h.appliesOn(date) && !h.getOpens().isBefore(arrival) && !h.getCloses().isAfter(endOfDay))
-                    .map(h -> new Slot(h.getOpens(), h.getCloses(), "Session " + h.getOpens() + "-" + h.getCloses()))
+                    .map(h -> new Slot(h.getOpens(), h.getCloses(), "Session " + h.getOpens() + "-" + h.getCloses(), h))
                     .min(Comparator.comparing(Slot::start));
             }
             case SCHEDULE_VARIES -> {
                 LocalTime end = arrival.plusMinutes(duration);
                 return end.isAfter(endOfDay) || end.isBefore(arrival) ? Optional.empty()
-                    : Optional.of(new Slot(arrival, end, "Times change daily; check the operator's schedule"));
+                    : Optional.of(new Slot(arrival, end, "Times change daily; check the operator's schedule", null));
             }
             default -> {
                 LocalTime end = arrival.plusMinutes(duration);
-                return end.isAfter(endOfDay) || end.isBefore(arrival) ? Optional.empty() : Optional.of(new Slot(arrival, end, null));
+                return end.isAfter(endOfDay) || end.isBefore(arrival) ? Optional.empty() : Optional.of(new Slot(arrival, end, null, null));
             }
         }
     }
@@ -174,7 +184,7 @@ public class ItineraryService {
                 if (vehicleRule) {
                     Optional<ActivityPriceRule> rule = choose(a, r.residency(), new Traveller(null), r.date(), start, Unit.PER_VEHICLE);
                     if (rule.isPresent()) counts.put(rule.get(), 1);
-                    else unknown.put(expiredReason(a, r.date()), 1);
+                    else unknown.put(unavailableReason(a, r.residency(), new Traveller(null), r.date(), start, Unit.PER_VEHICLE), 1);
                 } else for (Traveller t : travellers) {
                     Optional<ActivityPriceRule> rule = choose(a, r.residency(), t, r.date(), start, null);
                     // Per-item purchases (e.g. a gemstone bag) are only assumed for travellers the default item is meant for.
@@ -183,14 +193,21 @@ public class ItineraryService {
                         continue;
                     }
                     if (rule.isPresent()) counts.merge(rule.get(), 1, Integer::sum);
-                    else unknown.merge(expiredReason(a, r.date()) + (t.adult() ? " (adult)" : " (child aged " + t.age() + ")"), 1, Integer::sum);
+                    else unknown.merge(unavailableReason(a, r.residency(), t, r.date(), start, null) + (t.adult() ? " (adult)" : " (child aged " + t.age() + ")"), 1, Integer::sum);
                 }
+                LocalDate today = ActivityViews.today();
                 counts.forEach((rule, qty) -> {
                     ActivitySource s = rule.getSourceId() == null ? null : sources.get(rule.getSourceId());
                     boolean assumed = rule.getUnit() == Unit.PER_ITEM || rule.getUnit() == Unit.PER_VEHICLE;
                     String detail = assumed ? (rule.getUnit() == Unit.PER_VEHICLE ? "Assumes one vehicle" : "Assumes one per person shown") : rule.getConditions();
+                    // Conflicting or undefined official information, or a price past its re-check period, is only an estimate.
+                    List<String> doubts = new ArrayList<>();
+                    if (rule.getUncertaintyNote() != null) doubts.add("Not confirmed: " + rule.getUncertaintyNote());
+                    freshness.price(rule, today).ifPresent(doubts::add);
+                    CostKind kind = !doubts.isEmpty() ? CostKind.ESTIMATE : assumed ? CostKind.ASSUMPTION : CostKind.VERIFIED;
+                    if (!doubts.isEmpty()) detail = join(detail, String.join(". ", doubts));
                     lines.add(new CostLine(rule.getLabel(), qty, rule.getAmountCents(), Math.multiplyExact(rule.getAmountCents(), qty),
-                        assumed ? CostKind.ASSUMPTION : CostKind.VERIFIED, detail, s == null ? null : s.getUrl(), rule.getVerifiedOn()));
+                        kind, detail, s == null ? null : s.getUrl(), rule.getVerifiedOn()));
                 });
                 unknown.forEach((reason, qty) -> lines.add(new CostLine("Admission", qty, null, null, CostKind.UNKNOWN, reason, null, null)));
                 if (!unknown.isEmpty()) note = "Some prices are not verified for this date";
@@ -201,8 +218,12 @@ public class ItineraryService {
             ActivitySource s = x.getSourceId() == null ? null : sources.get(x.getSourceId());
             if (!x.isMandatory()) continue;
             int qty = x.getUnit() == Unit.PER_PERSON ? travellers.size() : 1;
-            lines.add(new CostLine(x.getLabel(), qty, x.getAmountCents(), x.getAmountCents() * qty,
-                x.getUnit() == Unit.PER_PERSON ? CostKind.VERIFIED : CostKind.ASSUMPTION, x.getConditions(), s == null ? null : s.getUrl(), x.getVerifiedOn()));
+            List<String> doubts = new ArrayList<>();
+            if (x.getUncertaintyNote() != null) doubts.add("Not confirmed: " + x.getUncertaintyNote());
+            freshness.extra(x, ActivityViews.today()).ifPresent(doubts::add);
+            CostKind kind = !doubts.isEmpty() ? CostKind.ESTIMATE : x.getUnit() == Unit.PER_PERSON ? CostKind.VERIFIED : CostKind.ASSUMPTION;
+            lines.add(new CostLine(x.getLabel(), qty, x.getAmountCents(), Math.multiplyExact(x.getAmountCents(), qty), kind,
+                doubts.isEmpty() ? x.getConditions() : join(x.getConditions(), String.join(". ", doubts)), s == null ? null : s.getUrl(), x.getVerifiedOn()));
         }
         return new StopCost(lines, note);
     }
@@ -212,13 +233,7 @@ public class ItineraryService {
      * Residency falls back to the international rate when no specific rate is published for SADC or African nationals.
      */
     static Optional<ActivityPriceRule> choose(Activity a, Residency residency, Traveller t, LocalDate date, LocalTime start, Unit onlyUnit) {
-        List<ActivityPriceRule> fitting = a.getPriceRules().stream()
-            .filter(p -> p.effectiveOn(date))
-            .filter(p -> DayRules.matches(p.getDaysOfWeek(), date.getDayOfWeek()))
-            .filter(p -> p.getTimeFrom() == null || (!start.isBefore(p.getTimeFrom()) && start.isBefore(p.getTimeTo())))
-            .filter(p -> onlyUnit == null ? p.getUnit() == Unit.PER_PERSON || p.getUnit() == Unit.PER_ITEM : p.getUnit() == onlyUnit)
-            .filter(p -> onlyUnit == Unit.PER_VEHICLE || audienceFits(p, t))
-            .toList();
+        List<ActivityPriceRule> fitting = fitting(a, t, date, start, onlyUnit).filter(p -> p.effectiveOn(date)).toList();
         for (Residency r : fallbacks(residency)) {
             List<ActivityPriceRule> forResidency = fitting.stream().filter(p -> p.getResidency() == r).toList();
             if (forResidency.isEmpty()) continue;
@@ -228,6 +243,31 @@ public class ItineraryService {
             return pool.stream().max(Comparator.comparingInt(ActivityPriceRule::getAmountCents));
         }
         return Optional.empty();
+    }
+
+    /** Rules that fit the traveller, day, session and unit, before effective dates are considered. */
+    private static Stream<ActivityPriceRule> fitting(Activity a, Traveller t, LocalDate date, LocalTime start, Unit onlyUnit) {
+        return a.getPriceRules().stream()
+            .filter(p -> DayRules.matches(p.getDaysOfWeek(), date.getDayOfWeek()))
+            .filter(p -> p.getTimeFrom() == null || (!start.isBefore(p.getTimeFrom()) && start.isBefore(p.getTimeTo())))
+            .filter(p -> onlyUnit == null ? p.getUnit() == Unit.PER_PERSON || p.getUnit() == Unit.PER_ITEM : p.getUnit() == onlyUnit)
+            .filter(p -> onlyUnit == Unit.PER_VEHICLE || audienceFits(p, t));
+    }
+
+    /**
+     * Why no price applies. When a matching price has ended, its amount stays visible as the last published figure,
+     * clearly not a price for the plan date.
+     */
+    static String unavailableReason(Activity a, Residency residency, Traveller t, LocalDate date, LocalTime start, Unit onlyUnit) {
+        List<ActivityPriceRule> ended = fitting(a, t, date, start, onlyUnit)
+            .filter(p -> p.getEffectiveTo() != null && p.getEffectiveTo().isBefore(date)).toList();
+        for (Residency r : fallbacks(residency)) {
+            Optional<ActivityPriceRule> last = ended.stream().filter(p -> p.getResidency() == r)
+                .max(Comparator.comparing(ActivityPriceRule::getEffectiveTo).thenComparing(ActivityPriceRule::isEstimateDefault));
+            if (last.isPresent()) return "Last published price " + rand(last.get().getAmountCents()) + " (" + last.get().getLabel() + ") ended on "
+                + last.get().getEffectiveTo() + "; the price for " + date + " is not published or not verified yet";
+        }
+        return expiredReason(a, date);
     }
 
     static List<Residency> fallbacks(Residency residency) {
@@ -262,6 +302,42 @@ public class ItineraryService {
             .orElse("No published price matches these travellers for this date");
     }
 
+    /** What cannot be confirmed for a stop: doubtful or stale hours and sessions, and unpublished participation limits. */
+    private List<String> cautions(Activity a, Slot slot, boolean children) {
+        List<String> cautions = new ArrayList<>();
+        LocalDate today = ActivityViews.today();
+        if (slot.row() != null) {
+            if (slot.row().getUncertaintyNote() != null) cautions.add("Times not confirmed: " + slot.row().getUncertaintyNote());
+            freshness.hours(a, slot.row(), today).ifPresent(cautions::add);
+        }
+        if (a.getParticipationRules() == ParticipationRules.UNKNOWN)
+            cautions.add("Participation limits (such as age or height) are not published" + (a.getParticipationNote() == null ? "" : ": " + a.getParticipationNote()));
+        else if (a.getParticipationRules() == ParticipationRules.PARTLY_KNOWN && children)
+            cautions.add("Participation limits are only partly published" + (a.getParticipationNote() == null ? "" : ": " + a.getParticipationNote()));
+        else if (children || a.getMinAge() != null) freshness.participation(a, today).ifPresent(cautions::add);
+        return cautions;
+    }
+
+    static Confidence confidence(List<Stop> stops, List<CostLine> costs) {
+        List<String> reasons = new ArrayList<>();
+        long unknown = costs.stream().filter(c -> c.kind() == CostKind.UNKNOWN).count();
+        long estimates = costs.stream().filter(c -> c.kind() == CostKind.ESTIMATE).count();
+        if (unknown > 0) reasons.add(unknown + " cost(s) have no verified price for this date");
+        if (estimates > 0) reasons.add(estimates + " cost(s) are estimates (conflicting, assumed or not recently checked)");
+        boolean schedule = true, suitability = true;
+        for (Stop s : stops) for (String c : s.cautions()) {
+            if (c.startsWith("Participation")) suitability = false; else schedule = false;
+            reasons.add(s.title() + ": " + c);
+        }
+        return new Confidence(unknown == 0 && estimates == 0, schedule, suitability, reasons);
+    }
+
+    private static boolean hasNoHoursOn(Activity a, LocalDate date) {
+        return (a.getScheduleType() == ScheduleType.OPENING_HOURS || a.getScheduleType() == ScheduleType.SESSIONS)
+            && a.getHours().stream().noneMatch(h -> h.appliesOn(date));
+    }
+    private static String join(String first, String second) { return first == null || first.isBlank() ? second : first + ". " + second; }
+
     private List<String> notes(Activity a, Slot slot, StopCost cost) {
         List<String> notes = new ArrayList<>();
         if (slot.note() != null) notes.add(slot.note());
@@ -275,7 +351,7 @@ public class ItineraryService {
 
     private Stop lunchStop(int order, Area area, LocalTime start, int minutes, Map<Area, PlanningService.AreaPoint> areas) {
         return new Stop(order, StopType.LUNCH, null, "Lunch break", area, ActivityViews.areaLabel(area), start, start.plusMinutes(minutes), 0,
-            List.of("Choose a place near " + areas.get(area).label()), List.of());
+            List.of("Choose a place near " + areas.get(area).label()), List.of(), List.of());
     }
 
     private List<CostLine> foodLines(ItineraryRequest r, int people, List<String> exclusions) {

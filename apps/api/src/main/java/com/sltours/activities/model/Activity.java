@@ -34,6 +34,8 @@ public class Activity {
     @Column(length = 180) private String seoTitle;
     @Column(length = 300) private String seoDescription;
     private OffsetDateTime publishedAt;
+    @Enumerated(EnumType.STRING) @Column(nullable = false, length = 20) private ParticipationRules participationRules = ParticipationRules.KNOWN;
+    @Column(length = 400) private String participationNote;
     @Column(nullable = false) private OffsetDateTime createdAt;
     @Column(nullable = false) private OffsetDateTime updatedAt;
     @OneToMany(mappedBy = "activity", cascade = CascadeType.ALL, orphanRemoval = true) @OrderBy("sortOrder")
@@ -101,6 +103,10 @@ public class Activity {
     public OffsetDateTime getPublishedAt() { return publishedAt; }
     public void setPublishedAt(OffsetDateTime v) { publishedAt = v; }
     public OffsetDateTime getUpdatedAt() { return updatedAt; }
+    public ParticipationRules getParticipationRules() { return participationRules; }
+    public void setParticipationRules(ParticipationRules v) { participationRules = v; }
+    public String getParticipationNote() { return participationNote; }
+    public void setParticipationNote(String v) { participationNote = v; }
     public List<ActivitySource> getSources() { return sources; }
     public List<ActivityPriceRule> getPriceRules() { return priceRules; }
     public List<ActivityExtra> getExtras() { return extras; }

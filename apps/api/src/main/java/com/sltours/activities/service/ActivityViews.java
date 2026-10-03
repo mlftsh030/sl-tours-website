@@ -10,6 +10,8 @@ import org.springframework.stereotype.Component;
 /** Maps activities to public and admin views and works out what still blocks publication. */
 @Component
 public class ActivityViews {
+    private final CatalogueFreshness freshness;
+    public ActivityViews(CatalogueFreshness freshness) { this.freshness = freshness; }
     public static final ZoneId ZONE = ZoneId.of("Africa/Johannesburg");
     /** A verification older than this is flagged as stale and blocks publishing. */
     public static final int VERIFICATION_MAX_AGE_DAYS = 180;
@@ -61,20 +63,29 @@ public class ActivityViews {
             ActivitySource s = p.getSourceId() == null ? null : sources.get(p.getSourceId());
             return new PublicPrice(p.getLabel(), p.getAudience(), p.getMinAge(), p.getMaxAge(), p.getResidency(), p.getUnit(), p.getAmountCents(),
                 p.getDaysOfWeek(), p.getTimeFrom(), p.getTimeTo(), p.getConditions(), p.getEffectiveFrom(), p.getEffectiveTo(), p.getVerifiedOn(),
-                s == null ? null : s.getUrl(), s == null ? null : s.getPublisher(), p.effectiveOn(today));
+                s == null ? null : s.getUrl(), s == null ? null : s.getPublisher(), p.effectiveOn(today),
+                caution(p.getUncertaintyNote(), freshness.price(p, today)));
         }).toList();
         var extras = a.getExtras().stream().filter(x -> x.getEffectiveTo() == null || !x.getEffectiveTo().isBefore(today)).map(x -> {
             ActivitySource s = x.getSourceId() == null ? null : sources.get(x.getSourceId());
-            return new PublicExtra(x.getLabel(), x.getAmountCents(), x.getUnit(), x.isMandatory(), x.getConditions(), x.getVerifiedOn(), s == null ? null : s.getUrl());
+            return new PublicExtra(x.getLabel(), x.getAmountCents(), x.getUnit(), x.isMandatory(), x.getConditions(), x.getVerifiedOn(), s == null ? null : s.getUrl(),
+                caution(x.getUncertaintyNote(), freshness.extra(x, today)));
         }).toList();
-        var hours = a.getHours().stream().map(h -> new PublicHours(h.getSeasonLabel(), h.getSeasonStart(), h.getSeasonEnd(), h.getDaysOfWeek(),
-            h.getOpens(), h.getCloses(), h.getLastEntry(), h.getNotes())).toList();
+        var hours = a.getHours().stream().filter(h -> h.getValidTo() == null || !h.getValidTo().isBefore(today))
+            .map(h -> new PublicHours(h.getSeasonLabel(), h.getSeasonStart(), h.getSeasonEnd(), h.getDaysOfWeek(), h.getOpens(), h.getCloses(),
+                h.getLastEntry(), h.getNotes(), h.getVerifiedOn(), h.getValidFrom(), h.getValidTo(), caution(h.getUncertaintyNote(), freshness.hours(a, h, today))))
+            .toList();
         return new ActivityPage(a.getSlug(), a.getTitle(), a.getCategory(), a.getArea(), areaLabel(a.getArea()), a.getSummary(), a.getDescription(),
             a.getAddress(), a.getOfficialUrl(), a.getDurationMinutes(), a.getScheduleType(), a.isWeatherDependent(), a.isIndoor(), a.getMinAge(),
             a.getAccompanimentRule(), a.getBookingNotes(), a.getPriceStatus(), a.getLastVerifiedOn(), a.getHeroImage(), a.getHeroImageAlt(),
             seoTitle(a), seoDescription(a), prices, extras, hours, a.getFaqs().stream().map(f -> new Faq(f.getQuestion(), f.getAnswer())).toList(),
             a.getSources().stream().map(s -> new PublicSource(s.getUrl(), s.getPublisher(), s.getSourceType(), s.getCovers(), s.getAccessedOn())).toList(),
-            a.getUpdatedAt());
+            a.getUpdatedAt(), a.getParticipationRules(), a.getParticipationNote());
+    }
+
+    private static String caution(String uncertainty, Optional<String> stale) {
+        String text = Stream.concat(Stream.ofNullable(uncertainty), stale.stream()).collect(Collectors.joining(". "));
+        return text.isEmpty() ? null : text;
     }
 
     public AdminActivity admin(Activity a) {
@@ -86,17 +97,18 @@ public class ActivityViews {
             a.getSources().stream().map(s -> new Source(s.getId(), s.getUrl(), s.getPublisher(), s.getSourceType(), s.getCovers(), s.getAccessedOn())).toList(),
             a.getPriceRules().stream().map(p -> new PriceRule(p.getLabel(), p.getAudience(), p.getMinAge(), p.getMaxAge(), p.getResidency(), p.getUnit(),
                 p.getAmountCents(), p.getDaysOfWeek(), p.getTimeFrom(), p.getTimeTo(), p.getConditions(), p.isEstimateDefault(), p.getEffectiveFrom(),
-                p.getEffectiveTo(), p.getSourceId(), p.getVerifiedOn())).toList(),
+                p.getEffectiveTo(), p.getSourceId(), p.getVerifiedOn(), p.getUncertaintyNote(), p.isPromotional())).toList(),
             a.getExtras().stream().map(x -> new Extra(x.getLabel(), x.getAmountCents(), x.getUnit(), x.isMandatory(), x.getConditions(), x.getEffectiveFrom(),
-                x.getEffectiveTo(), x.getSourceId(), x.getVerifiedOn())).toList(),
+                x.getEffectiveTo(), x.getSourceId(), x.getVerifiedOn(), x.getUncertaintyNote())).toList(),
             a.getHours().stream().map(h -> new Hours(h.getSeasonLabel(), h.getSeasonStart(), h.getSeasonEnd(), h.getDaysOfWeek(), h.getOpens(), h.getCloses(),
-                h.getLastEntry(), h.getNotes(), h.getSourceId())).toList(),
-            a.getFaqs().stream().map(f -> new Faq(f.getQuestion(), f.getAnswer())).toList(), publishProblems(a));
+                h.getLastEntry(), h.getNotes(), h.getSourceId(), h.getVerifiedOn(), h.getUncertaintyNote(), h.getValidFrom(), h.getValidTo())).toList(),
+            a.getFaqs().stream().map(f -> new Faq(f.getQuestion(), f.getAnswer())).toList(), publishProblems(a), a.getParticipationRules(),
+            a.getParticipationNote(), freshness.issues(a, today()));
     }
 
     public AdminActivitySummary summary(Activity a) {
         return new AdminActivitySummary(a.getId(), a.getStatus(), a.getSlug(), a.getTitle(), a.getCategory(), a.getArea(), a.getPriceStatus(),
-            a.getLastVerifiedOn(), stale(a), a.getPriceRules().size(), a.getSources().size(), publishProblems(a));
+            a.getLastVerifiedOn(), stale(a), a.getPriceRules().size(), a.getSources().size(), publishProblems(a), freshness.issues(a, today()));
     }
 
     public static String seoTitle(Activity a) {

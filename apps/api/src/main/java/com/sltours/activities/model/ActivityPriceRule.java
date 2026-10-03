@@ -27,6 +27,8 @@ public class ActivityPriceRule {
     private UUID sourceId;
     @Column(nullable = false) private LocalDate verifiedOn;
     @Column(nullable = false) private int sortOrder;
+    @Column(length = 400) private String uncertaintyNote;
+    @Column(nullable = false) private boolean promotional;
     protected ActivityPriceRule() {}
     public ActivityPriceRule(Activity activity) { this.activity = activity; }
     public UUID getId() { return id; }
@@ -47,6 +49,10 @@ public class ActivityPriceRule {
     public UUID getSourceId() { return sourceId; }
     public LocalDate getVerifiedOn() { return verifiedOn; }
     public int getSortOrder() { return sortOrder; }
+    /** Set when official sources conflict or leave eligibility undefined; the price is then only an estimate. */
+    public String getUncertaintyNote() { return uncertaintyNote; }
+    public boolean isPromotional() { return promotional; }
+    public void setQualifiers(String uncertaintyNote, boolean promotional) { this.uncertaintyNote = uncertaintyNote; this.promotional = promotional; }
     public void set(String label, Audience audience, Integer minAge, Integer maxAge, Residency residency, Unit unit, int amountCents,
             String daysOfWeek, LocalTime timeFrom, LocalTime timeTo, String conditions, boolean estimateDefault, LocalDate effectiveFrom,
             LocalDate effectiveTo, UUID sourceId, LocalDate verifiedOn, int sortOrder) {
