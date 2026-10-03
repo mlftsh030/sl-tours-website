@@ -45,6 +45,8 @@ springdoc:
     path: /swagger-ui
 
 sltours:
+  # Canonical URLs, sitemap and Open Graph links.
+  public-base-url: ${SLTOURS_PUBLIC_BASE_URL:https://sl-tours.com}
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:8080}
   security:

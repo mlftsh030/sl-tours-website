@@ -361,4 +361,6 @@ public class Tour {
     public void setBannerImage(String bannerImage) {
         this.bannerImage = bannerImage;
     }
+
+    public java.time.OffsetDateTime getUpdatedAt() { return updatedAt; }
 }

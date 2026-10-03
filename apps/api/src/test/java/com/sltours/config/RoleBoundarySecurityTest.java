@@ -38,7 +38,9 @@ import org.springframework.test.web.servlet.MockMvc;
 /** Every role boundary in the brief, checked through the real security filter chain. */
 @WebMvcTest(controllers = { AdminEnquiryController.class, EnquiryController.class, AdminDriverController.class, DriverPortalController.class,
     AdminFleetController.class, AdminAssignmentController.class, AdminPrivateTripController.class, PrivateTripController.class,
-    AdminMediaController.class, PublicMediaController.class, com.sltours.siteimages.SiteImageController.class })
+    AdminMediaController.class, PublicMediaController.class, com.sltours.siteimages.SiteImageController.class,
+    com.sltours.activities.controller.ActivityController.class, com.sltours.activities.controller.AdminActivityController.class,
+    com.sltours.seo.SeoController.class })
 @Import(SecurityConfig.class)
 @TestPropertySource(properties = { "sltours.cors.allowed-origins=http://localhost:5173" })
 class RoleBoundarySecurityTest {
@@ -59,6 +61,11 @@ class RoleBoundarySecurityTest {
     @MockBean PricingAdminService pricing;
     @MockBean PrivateTripService privateTrips;
     @MockBean com.sltours.siteimages.SiteImageService siteImages;
+    @MockBean com.sltours.activities.service.ActivityService activityService;
+    @MockBean com.sltours.activities.service.ItineraryService itineraryService;
+    @MockBean com.sltours.activities.service.ActivityAdminService activityAdmin;
+    @MockBean com.sltours.activities.service.PlanningService planningService;
+    @MockBean com.sltours.seo.SeoService seoService;
 
     private static final UUID ID = UUID.randomUUID();
     private static final String REVIEW = "{\"version\":0,\"notes\":\"ok\"}";
@@ -154,5 +161,23 @@ class RoleBoundarySecurityTest {
         mvc.perform(get("/api/v1/private-trips/vehicles")).andExpect(status().isOk());
         mvc.perform(get("/api/v1/admin/enquiries")).andExpect(status().isUnauthorized());
         mvc.perform(get("/api/v1/admin/enquiries").with(user("customer").roles("CUSTOMER"))).andExpect(status().isForbidden());
+    }
+
+    @Test void catalogueIsPublicButEditingItIsAdministratorOnly() throws Exception {
+        when(seoService.sitemap()).thenReturn("<urlset/>");
+        mvc.perform(get("/api/v1/activities")).andExpect(status().isOk());
+        mvc.perform(get("/api/v1/seo/sitemap.xml")).andExpect(status().isOk()).andExpect(header().string("Cache-Control", "no-cache"));
+        mvc.perform(get("/api/v1/admin/activities")).andExpect(status().isUnauthorized());
+        for (String role : List.of("STAFF", "DRIVER", "CUSTOMER"))
+            mvc.perform(get("/api/v1/admin/activities").with(user("x").roles(role))).andExpect(status().isForbidden());
+        mvc.perform(get("/api/v1/admin/activities").with(user("admin").roles("ADMIN"))).andExpect(status().isOk());
+        mvc.perform(put("/api/v1/admin/planning").with(user("staff").roles("STAFF")).with(csrf()).contentType(MediaType.APPLICATION_JSON)
+            .content("{\"version\":0,\"roadFactor\":1.4,\"averageSpeedKmh\":40,\"bufferMinutes\":10,\"lunchMinutes\":60}")).andExpect(status().isForbidden());
+        String plan = "{\"date\":\"2030-01-07\",\"startTime\":\"09:00\",\"endTime\":\"17:00\",\"adults\":2,\"childAges\":[],\"residency\":\"SA_RESIDENT\","
+            + "\"interests\":[],\"startArea\":\"CITY_CENTRE\",\"transport\":\"OWN_VEHICLE\",\"maxStops\":3,\"onlyPublishedPrices\":false,\"mustInclude\":[]}";
+        mvc.perform(post("/api/v1/itineraries").contentType(MediaType.APPLICATION_JSON).content(plan)).andExpect(status().isForbidden());
+        mvc.perform(post("/api/v1/itineraries").with(csrf()).contentType(MediaType.APPLICATION_JSON).content(plan)).andExpect(status().isOk());
+        verify(activityAdmin).list();
+        verify(planningService, never()).update(anyLong(), any(), anyInt(), anyInt(), anyInt());
     }
 }

@@ -50,7 +50,9 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/auth/csrf", "/api/v1/auth/me", "/api/v1/auth/login", "/api/v1/auth/register").permitAll()
                 .requestMatchers("/api/v1/admin/**").hasAnyRole("STAFF", "ADMIN")
                 .requestMatchers("/api/v1/driver/**").hasRole("DRIVER")
-                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/public/**", "/api/v1/private-trips/**").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/public/**", "/api/v1/private-trips/**", "/api/v1/activities", "/api/v1/activities/*",
+                    "/api/v1/seo/**").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/itineraries").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/private-trips/requests", "/api/v1/private-trips/quote-requests").permitAll()
                 .requestMatchers("/api/v1/account/**", "/api/v1/my-trip/**").hasRole("CUSTOMER")
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/tours", "/api/v1/tours/*").permitAll()
