@@ -62,6 +62,7 @@ Customer contact summaries group booking contact email addresses for staff conve
 - **Reject** (with a note) asks the driver to redo the inspection. A released collection cannot be rejected; open a restriction instead.
 - Approving a return closes the assignment. Any restriction opened by the return stays open until cleared from **Vehicles**.
 - Change an assignment's vehicle or driver, or cancel it, while the vehicle has not been released. Changing either supersedes (rejects) the pending collection inspection.
+- **Needs attention** lists upcoming trips whose vehicle is restricted, out of service or sample data, or whose driver is no longer eligible. Vehicle and driver screens show their upcoming trips with **Reassign** links; reassignment runs the usual availability, restriction and eligibility checks.
 
 ## Private trips
 
@@ -83,6 +84,22 @@ Customer contact summaries group booking contact email addresses for staff conve
 - **Homepage slider**: the built-in slides stay live until you activate at least one uploaded image. Active images replace the slider, in order, with optional headline text.
 - **Gallery**: active uploads appear first; all existing gallery photos remain.
 - Uploads start hidden. Alternative text is required.
+
+## Explore activities (administrators)
+
+- **Explore activities** lists every catalogue entry with its status, price status, last check and whether it is ready to publish.
+- Record what you checked: add **sources** (prefer the operator's own site or a public authority), then **price rules**
+  with effective dates, any **additional costs**, **opening hours or sessions** (seasons as MM-DD) and visitor **questions**.
+- **Mark as checked today** after re-checking the sources. Publishing requires an official source, a check within 180 days,
+  an address, hours when relevant and a source for every price. Problems are listed above the form.
+- Use **Price status** to say when the operator does not publish prices or sets them at booking; never enter a guessed price.
+- Publishing, unpublishing and edits update the public page and sitemap immediately ([SEO](../operations/SEO.md)).
+- **Day-planner assumptions** (road factor, average speed, parking buffer, lunch length) are planning estimates shown to visitors.
+
+## Development sample data
+
+Rows inserted by migration V2 are badged **Sample data** and, outside development, are never offered or assigned.
+See [Development Sample Data](../operations/DEVELOPMENT_SEED_DATA.md).
 
 ## Customer accounts
 

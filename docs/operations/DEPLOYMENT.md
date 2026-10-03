@@ -2,7 +2,9 @@
 
 ## Recommended Shape
 
-- Serve `apps/web` build through Nginx or a static hosting platform.
+- Serve `apps/web` through the bundled Nginx configuration (or another server with equivalent server-side includes and
+  an internal proxy to the API). Plain static hosting would lose the server-rendered titles, canonical links, page
+  content and live sitemap described in [Search Metadata](SEO.md).
 - Run `apps/api` as a single Spring Boot service.
 - Use managed PostgreSQL for production.
 - Run Flyway migrations during API deployment.
@@ -36,6 +38,8 @@ Migration V9 adds PostgreSQL exclusion constraints that prevent double-booking v
 - The API refuses to start if the `dev`/`test` profile is combined with `production`/`prod`, or if
   `sltours.pricing.allow-sample-rates` is enabled outside `dev`/`test`. Demo driver sign-ins exist only in the `dev` profile.
 - `docker-compose.yml` defaults to the `dev` profile for local use; set the variables above for any shared deployment.
+- Set `SLTOURS_PUBLIC_BASE_URL` to the public origin (default `https://sl-tours.com`); it is used for canonical links,
+  Open Graph URLs and the sitemap.
 - Mount the `media-data` volume and back it up with the database ([Media Storage](MEDIA_STORAGE.md)).
 - Migration V2 inserts sample bookings, people and vehicles in every environment. V12 flags them and production
   excludes them from inventory and reporting; see [Development Sample Data](DEVELOPMENT_SEED_DATA.md) for removal.

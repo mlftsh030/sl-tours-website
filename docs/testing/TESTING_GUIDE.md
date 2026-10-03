@@ -16,6 +16,10 @@
   - `IdleSessionFilterTest` and `ApiSecurityTest`: idle timeout despite polling; missing `version` rejected.
 - Operations features (frontend): enquiry form (confirmation only after save, retry idempotency, double-submit), idle sign-out and background request labelling, private-trip booking (price-change refresh, idempotent resubmit), driver inspection form (validation and multipart upload).
 
+- Explore catalogue: `ItineraryServiceTest` (age/residency/session pricing, expired prices become unverified, per-item quantities, opening hours, seasons, last entry, minimum age, geographic ordering, budget verdicts, sample vehicle estimates), `ActivityCatalogueIntegrationTest` (seeded catalogue, Cape Point fees after 31 Oct 2026, publication rules, immediate SEO and sitemap refresh, noindex and escaping), role checks in `RoleBoundarySecurityTest`, frontend `DayPlannerPage.test.tsx`.
+- Operations follow-up: `ProductionSampleDataIntegrationTest`, `AssignmentAttentionIntegrationTest`, `DemoAccountGuardTest`, `ProductionSafetyCheckTest`.
+- Browser walkthroughs (Playwright, desktop 1366 px and phone 390 px) were run manually for admin, driver, Explore and planner screens; they are not part of `npm test`.
+
 Integration tests use Testcontainers with PostgreSQL 16 and apply every Flyway migration, so Docker must be running for `mvn test`.
 
 ## Commands

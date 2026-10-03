@@ -23,6 +23,9 @@ All POST/PUT/PATCH/DELETE requests require the CSRF header, including public sub
 - `GET /api/v1/private-trips/availability?date=&time=HH:mm&durationMinutes=&passengers=`: available vehicles with backend price quotes and pricing disclosures.
 - `POST /api/v1/private-trips/requests`: private-trip booking request; `expectedTotalCents` must match the current backend price (409 otherwise), `idempotencyKey` required.
 - `POST /api/v1/private-trips/quote-requests`: manual-pricing request, stored as an enquiry.
+- `GET /api/v1/activities?category=&area=&q=`: published activities as cards; `GET /api/v1/activities/{slug}`: activity page with current and announced prices, extras, hours, FAQs and sources.
+- `POST /api/v1/itineraries`: calculates a day plan (nothing stored); see `docs/product/EXPLORE_CATALOGUE.md`.
+- `GET /api/v1/seo/head?path=`, `GET /api/v1/seo/body?path=`, `GET /api/v1/seo/sitemap.xml`: server-rendered head tags, core content and sitemap (used by Nginx).
 - `GET /api/v1/public/site-images?slot=HOME_HERO|GALLERY`, `GET /api/v1/public/media/{id}` (PUBLIC files only).
 
 Only ACTIVE tours are public/bookable. Authenticated customer bookings are linked to the server's account identity; anonymous submissions remain guest bookings.
@@ -62,6 +65,9 @@ Enquiries, fleet, assignments and pricing (ADMIN/STAFF; writes marked ADMIN requ
 - `GET /api/v1/admin/media/{id}` (driver documents ADMIN only)
 - `/api/v1/admin/drivers/**`: list, create, update, sign-in account, verification, documents (ADMIN only)
 - `/api/v1/admin/site-images` (ADMIN only)
+- `GET|POST /api/v1/admin/activities`, `GET|PUT /api/v1/admin/activities/{id}`, `POST …/{id}/verify` `{version}`, `POST …/{id}/status` `{version, status}` (ADMIN only)
+- `GET|PUT /api/v1/admin/planning` (day-planner assumptions, ADMIN only)
+- `GET /api/v1/admin/assignments/attention` (upcoming trips at risk); vehicles and drivers return `upcomingAssignments`; `POST /api/v1/admin/vehicles/{id}/genuine`, `POST /api/v1/admin/drivers/{id}/genuine` (ADMIN)
 
 ## Driver portal
 

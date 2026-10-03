@@ -66,6 +66,10 @@ Payment statuses: `PENDING`, `PROCESSING`, `PAID`, `FAILED`, `REFUNDED`, `PARTIA
 | V10 `private_trip_booking` | `bookings.booking_type` (tour_id now optional for private trips), idempotency key; `private_trip_rates` (seeded **SAMPLE** rates), per-vehicle rate overrides, `private_trip_fees`, `private_trip_details` with the stored price breakdown. |
 | V11 `site_images` | Administrator-managed hero and gallery images (inactive until activated). |
 
+| V12 `flag_development_seed_data` | `demo_data` flags on the fixed-ID V2 sample rows (no deletions). |
+| V13 `activity_catalogue` | `activities`, `activity_sources`, `activity_price_rules`, `activity_extras`, `activity_hours`, `activity_faqs`; day-planner `planning_areas` and `planning_settings`. |
+| V14 `seed_verified_activities` | 18 published and 5 draft activities researched on 3 Oct 2026, with sources, price rules, hours and FAQs. |
+
 Assignment statuses: `SCHEDULED`, `AWAITING_RELEASE`, `RELEASED`, `RETURNED`, `CLOSED`, `CANCELLED`.
 Enquiry statuses: `NEW`, `IN_PROGRESS`, `AWAITING_CUSTOMER`, `CONVERTED`, `CLOSED`.
 V9 runs `create extension if not exists btree_gist`. Two separate conditions must hold; see

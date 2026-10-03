@@ -5,7 +5,8 @@
 Move SL Tours from a static website plus WhatsApp/manual admin process toward a platform that supports discovery, planning, booking, confirmation, payment tracking, resource assignment, trip delivery, reviews, and returning customers.
 
 > The authoritative brief for admin, driver, fleet, inspection, enquiry and private-trip features is
-> [SL Tours Operations Requirements](SL_TOURS_OPERATIONS_REQUIREMENTS.md).
+> [SL Tours Operations Requirements](SL_TOURS_OPERATIONS_REQUIREMENTS.md). The Explore catalogue and day planner are
+> described in [Explore Cape Town Catalogue](EXPLORE_CATALOGUE.md).
 
 ## Experiences
 
