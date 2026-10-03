@@ -2805,3 +2805,58 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .admin-upcoming-list small { display: block; color: #63758a; }
 .admin-upcoming-list small.admin-warning { color: var(--danger); }
 @media (max-width: 640px) { .admin-upcoming-list li { flex-direction: column; align-items: stretch; } }
+
+/* Explore Cape Town */
+#root > main { width: var(--container); margin: 0 auto; padding: 32px 0; }
+.activity-card-placeholder { width: 100%; height: 100%; display: grid; place-items: center; background: linear-gradient(160deg, #eef3f8, #dfe7f1); color: #8fa2bf; }
+.activity-card-placeholder svg { width: 64px; height: 64px; stroke-width: 1.2; }
+.activity-card-summary { margin: 0; color: var(--muted); font-size: .9rem; }
+.activity-card-check { margin: 0; font-size: .78rem; color: var(--success); }
+.explore-filters { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.explore-area select { min-height: 44px; }
+.explore-note { margin-top: 24px; }
+.activity-table { margin: 12px 0 20px; }
+.activity-table table { min-width: 0; }
+.activity-check { display: flex; gap: 8px; align-items: center; color: var(--success); font-weight: 600; }
+.activity-check svg { width: 20px; height: 20px; flex: 0 0 20px; }
+.activity-extras, .activity-sources { padding-left: 18px; display: grid; gap: 8px; }
+.activity-extras small, .activity-sources small { display: block; color: var(--muted); }
+.detail-panel .button { width: 100%; margin-bottom: 10px; }
+.planner-only-priced { margin: 0 0 18px; }
+.planner-result { display: grid; gap: 22px; margin-top: 32px; }
+.planner-verdict { display: flex; gap: 14px; align-items: flex-start; padding: 18px 20px; border-radius: var(--radius); background: var(--mist); border-left: 5px solid var(--ocean); }
+.planner-verdict svg { width: 28px; height: 28px; flex: 0 0 28px; color: var(--ocean); }
+.planner-verdict p { margin: 4px 0 0; }
+.planner-verdict.is-ok { border-left-color: var(--success); background: #eef8f2; }
+.planner-verdict.is-ok svg { color: var(--success); }
+.planner-verdict.is-estimate { border-left-color: var(--sun); background: #fff8ea; }
+.planner-verdict.is-over, .planner-verdict.is-unknown { border-left-color: var(--danger); background: #fff4f2; }
+.planner-verdict.is-over svg, .planner-verdict.is-unknown svg { color: var(--danger); }
+.planner-timeline { list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; }
+.planner-stop { background: white; border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; }
+.planner-stop.is-lunch, .planner-stop.is-return { background: var(--sand); }
+.planner-travel { margin: 0 0 8px; color: var(--muted); font-size: .85rem; }
+.planner-stop-head { display: flex; gap: 16px; align-items: flex-start; }
+.planner-time { font-weight: 800; color: var(--navy); min-width: 98px; }
+.planner-stop h3 { margin: 0; font-size: 1.05rem; }
+.planner-stop h3 a { color: var(--charcoal); }
+.planner-stop-head p { display: flex; gap: 6px; align-items: center; margin: 4px 0 0; color: var(--muted); font-size: .88rem; }
+.planner-stop-head svg { width: 15px; height: 15px; }
+.planner-notes { margin: 10px 0 0; padding-left: 18px; color: var(--ink); font-size: .88rem; }
+.planner-costs { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 6px; }
+.planner-costs li { display: flex; justify-content: space-between; gap: 12px; padding: 8px 10px; border-radius: 6px; background: #f7f9fb; font-size: .9rem; }
+.planner-costs small { display: block; color: var(--muted); font-size: .76rem; }
+.planner-costs .cost-unknown { background: #fff4f2; }
+.planner-costs .cost-estimate, .planner-costs .cost-assumption { background: #fffaf0; }
+.planner-costs .cost-excluded { background: #f2f4f7; color: var(--muted); }
+.cost-amount { text-align: right; white-space: nowrap; font-weight: 700; }
+.cost-kind { font-weight: 500; }
+.planner-summary h2 { margin-top: 0; }
+@media (max-width: 640px) { .planner-stop-head { flex-direction: column; gap: 4px; } .planner-time { min-width: 0; } }
+.activity-editor h3 { margin-top: 28px; }
+.activity-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px 14px; align-items: end; padding: 14px; margin-bottom: 10px;
+  border: 1px solid #dde5ed; border-radius: 8px; background: #fbfcfe; }
+.activity-row label { font-size: .8rem; font-weight: 700; }
+.activity-row .full-field { grid-column: 1 / -1; }
+.activity-ages { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.activity-actions { position: sticky; bottom: 0; background: white; padding: 12px 0; border-top: 1px solid #edf1f5; }

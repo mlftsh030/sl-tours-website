@@ -5,6 +5,9 @@ import { GalleryPage } from "../features/gallery/GalleryPage";
 import { lazy, Suspense, type ReactNode } from "react";
 import { LoadingState } from "../components/StateBlocks";
 import { PrivateTripPage } from "../features/private-trips/PrivateTripPage";
+import { ExplorePage } from "../features/explore/ExplorePage";
+import { ActivityDetailPage } from "../features/explore/ActivityDetailPage";
+import { DayPlannerPage } from "../features/explore/DayPlannerPage";
 import { TripPlannerPage } from "../features/trip-planner/TripPlannerPage";
 import { ExperiencesPage } from "../features/tours/ExperiencesPage";
 import { HomePage } from "../features/tours/HomePage";
@@ -35,6 +38,9 @@ export default function App() {
         <Route path="transfers" element={<ExperiencesPage key="transfer" focus="transfer" />} />
         <Route path="book/:slug" element={<BookingPage />} />
         <Route path="book-private-trip" element={<PrivateTripPage />} />
+        <Route path="explore" element={<ExplorePage />} />
+        <Route path="explore/plan" element={<DayPlannerPage />} />
+        <Route path="explore/:slug" element={<ActivityDetailPage />} />
         <Route path="plan-my-trip" element={<TripPlannerPage />} />
         <Route path="gallery" element={<GalleryPage />} />
         <Route path="about" element={<AboutPage />} />

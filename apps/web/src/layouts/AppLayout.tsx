@@ -180,6 +180,9 @@ export function AppLayout() {
                 <Link to="/experiences">Our Tours</Link>
               </li>
               <li>
+                <Link to="/explore">Explore Cape Town</Link>
+              </li>
+              <li>
                 <Link to="/book-private-trip">Book a Private Trip</Link>
               </li>
               <li>

@@ -2,7 +2,7 @@ import { Link, NavLink, Navigate, Route, Routes, useNavigate } from "react-route
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { Menu, LayoutDashboard, Map, BookOpen, Users, LogOut, Inbox, Car, IdCard, ClipboardCheck, BadgeDollarSign, Images } from "lucide-react";
+import { Compass, Menu, LayoutDashboard, Map, BookOpen, Users, LogOut, Inbox, Car, IdCard, ClipboardCheck, BadgeDollarSign, Images } from "lucide-react";
 import { useSession } from "../auth/useSession";
 import { signOut } from "../auth/authApi";
 import { LoadingState, ErrorState } from "../../components/StateBlocks";
@@ -16,6 +16,7 @@ import { DriversPanel } from "./DriversPanel";
 import { AssignmentsPanel } from "./AssignmentsPanel";
 import { PricingPanel } from "./PricingPanel";
 import { SiteImagesPanel } from "./SiteImagesPanel";
+import { ActivitiesPanel } from "./ActivitiesPanel";
 import { useDocumentTitle } from "../../lib/useDocumentTitle";
 import { useAdminLayout } from "./useAdminLayout";
 
@@ -50,6 +51,7 @@ export function OperationsPage() {
     ...(isAdmin ? [{ to: "/operations/drivers", label: "Drivers", icon: IdCard }] : []),
     { to: "/operations/tours", label: "Tours & prices", icon: Map },
     { to: "/operations/pricing", label: "Private-trip rates", icon: BadgeDollarSign },
+    ...(isAdmin ? [{ to: "/operations/activities", label: "Explore activities", icon: Compass }] : []),
     ...(isAdmin ? [{ to: "/operations/site-images", label: "Website images", icon: Images }] : []),
     { to: "/operations/customers", label: "Customers", icon: Users }
   ];
@@ -74,6 +76,7 @@ export function OperationsPage() {
         <Route path="pricing" element={<PricingPanel isAdmin={isAdmin} />} />
         {isAdmin && <Route path="drivers" element={<DriversPanel />} />}
         {isAdmin && <Route path="site-images" element={<SiteImagesPanel />} />}
+        {isAdmin && <Route path="activities" element={<ActivitiesPanel />} />}
         <Route path="customers" element={<CustomersPanel />} />
         <Route path="enquiries" element={<EnquiriesPanel />} />
         <Route path="*" element={<Navigate to="/operations" replace />} />

@@ -247,3 +247,44 @@ export interface PricingView {
   sampleRatesShownPublicly: boolean;
 }
 export interface SiteImage { id: string; version: number; slot: "HOME_HERO" | "GALLERY"; url: string; altText: string; title: string | null; subtitle: string | null; body: string | null; sortOrder: number; active: boolean; }
+
+// Explore Cape Town catalogue and day plans
+export type ActivityCategory = "NATURE" | "WILDLIFE" | "MUSEUM_HISTORY" | "ART_CULTURE" | "WINE" | "FOOD_MARKET" | "BEACH" | "HIKING" | "SCENIC_DRIVE"
+  | "FAMILY_LEISURE" | "GO_KARTING" | "ICE_SKATING" | "CINEMA" | "ADVENTURE";
+export type ActivityArea = "CITY_CENTRE" | "WATERFRONT" | "TABLE_MOUNTAIN" | "ATLANTIC_SEABOARD" | "SOUTHERN_SUBURBS" | "CONSTANTIA" | "HOUT_BAY_CHAPMANS"
+  | "FALSE_BAY" | "CAPE_POINT" | "NORTHERN_SUBURBS";
+export type PriceStatus = "VERIFIED" | "VARIES_AT_BOOKING" | "NOT_PUBLISHED" | "FREE";
+export type Residency = "ANY" | "SA_RESIDENT" | "SADC" | "AFRICAN" | "INTERNATIONAL";
+export type ScheduleType = "OPENING_HOURS" | "SESSIONS" | "SCHEDULE_VARIES" | "ALWAYS_OPEN";
+export type PriceAudience = "EVERYONE" | "ADULT" | "CHILD" | "INFANT" | "SENIOR" | "STUDENT" | "FAMILY" | "GROUP";
+export type PriceUnit = "PER_PERSON" | "PER_VEHICLE" | "PER_GROUP" | "PER_ITEM";
+export type SourceType = "OFFICIAL_OPERATOR" | "TOURISM_AUTHORITY" | "PUBLIC_AUTHORITY" | "OTHER";
+export interface ActivityCard {
+  slug: string; title: string; category: ActivityCategory; area: ActivityArea; areaLabel: string; summary: string; durationMinutes: number;
+  priceStatus: PriceStatus; fromPriceCents: number | null; fromPriceLabel: string | null; heroImage: string | null; heroImageAlt: string | null;
+  indoor: boolean; weatherDependent: boolean; lastVerifiedOn: string | null;
+}
+export interface PublicPrice {
+  label: string; audience: PriceAudience; minAge: number | null; maxAge: number | null; residency: Residency; unit: PriceUnit; amountCents: number;
+  daysOfWeek: string | null; timeFrom: string | null; timeTo: string | null; conditions: string | null; effectiveFrom: string | null;
+  effectiveTo: string | null; verifiedOn: string; sourceUrl: string | null; sourcePublisher: string | null; currentlyEffective: boolean;
+}
+export interface ActivityHoursRow { seasonLabel: string | null; seasonStart: string | null; seasonEnd: string | null; daysOfWeek: string | null; opens: string; closes: string; lastEntry: string | null; notes: string | null; }
+export interface ActivityPage {
+  slug: string; title: string; category: ActivityCategory; area: ActivityArea; areaLabel: string; summary: string; description: string;
+  address: string | null; officialUrl: string | null; durationMinutes: number; scheduleType: ScheduleType; weatherDependent: boolean; indoor: boolean;
+  minAge: number | null; accompanimentRule: string | null; bookingNotes: string | null; priceStatus: PriceStatus; lastVerifiedOn: string | null;
+  heroImage: string | null; heroImageAlt: string | null; seoTitle: string; seoDescription: string; prices: PublicPrice[];
+  extras: Array<{ label: string; amountCents: number; unit: PriceUnit; mandatory: boolean; conditions: string | null; verifiedOn: string; sourceUrl: string | null }>;
+  hours: ActivityHoursRow[]; faqs: Array<{ question: string; answer: string }>;
+  sources: Array<{ url: string; publisher: string; sourceType: SourceType; covers: string; accessedOn: string }>; updatedAt: string;
+}
+export type CostKind = "VERIFIED" | "ASSUMPTION" | "ESTIMATE" | "UNKNOWN" | "EXCLUDED";
+export interface ItineraryCostLine { label: string; quantity: number; unitAmountCents: number | null; amountCents: number | null; kind: CostKind; detail: string | null; sourceUrl: string | null; verifiedOn: string | null; }
+export interface ItineraryStop { order: number; type: "ACTIVITY" | "LUNCH" | "RETURN"; slug: string | null; title: string; area: ActivityArea; areaLabel: string; start: string; end: string; travelMinutes: number; notes: string[]; costs: ItineraryCostLine[]; }
+export interface Itinerary {
+  date: string; travellers: string; stops: ItineraryStop[]; transport: ItineraryCostLine[]; food: ItineraryCostLine[];
+  totals: { verifiedCents: number; assumptionCents: number; estimatedCents: number; knownTotalCents: number; unknownItems: number };
+  budgetCents: number | null; verdict: "WITHIN_BUDGET" | "ESTIMATED_WITHIN_BUDGET" | "OVER_BUDGET" | "CANNOT_CONFIRM" | "NO_BUDGET";
+  verdictMessage: string; assumptions: string[]; exclusions: string[]; warnings: string[]; skipped: string[];
+}

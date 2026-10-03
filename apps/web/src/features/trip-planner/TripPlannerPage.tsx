@@ -10,6 +10,7 @@ import { createTripPlanningRequest } from "../../lib/api";
 import { useDocumentTitle } from "../../lib/useDocumentTitle";
 import { newIdempotencyKey } from "../../lib/uuid";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 
 const options = {
   interests: ["nature", "wine", "culture", "history", "food", "wildlife", "beaches", "adventure", "shopping"],
@@ -79,6 +80,14 @@ export function TripPlannerPage() {
         image="/assets/gallery/22.jpg"
       />
       <section className="section planner-page">
+        <aside className="private-trip-cta">
+          <div>
+            <p className="eyebrow">Just one day?</p>
+            <h2>Plan a day yourself</h2>
+            <p>See a suggested route with opening times and every admission, transport and food cost, using prices from official sources.</p>
+          </div>
+          <Link className="button button-primary" to="/explore/plan">Plan a day</Link>
+        </aside>
         <form onSubmit={onSubmit} className="form-surface wide-form">
           <div className="form-grid">
             <label>
