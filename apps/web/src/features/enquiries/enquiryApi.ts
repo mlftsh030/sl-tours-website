@@ -1,4 +1,5 @@
 import { request } from "../../lib/api";
+import { withReferral } from "../../lib/referral";
 import type { EnquiryReceipt } from "../../types/api";
 
 export interface EnquiryPayload {
@@ -15,4 +16,4 @@ export interface EnquiryPayload {
 }
 
 export const submitEnquiry = (payload: EnquiryPayload) =>
-  request<EnquiryReceipt>("/api/v1/enquiries", { method: "POST", body: JSON.stringify(payload) });
+  request<EnquiryReceipt>("/api/v1/enquiries", { method: "POST", body: JSON.stringify(withReferral(payload)) });

@@ -7,13 +7,15 @@ import { LoadingState, ErrorState } from "../../components/StateBlocks";
 import { formatAmount as formatMoney } from "../../lib/format";
 import type { OperationsBooking } from "../../types/api";
 import { BookingResources } from "./BookingResources";
+import { BookingFinance } from "./BookingFinance";
 const statuses = ["ENQUIRY", "QUOTE_PENDING", "QUOTE_SENT", "AWAITING_PAYMENT", "CONFIRMED", "GUIDE_ASSIGNED", "READY", "IN_PROGRESS", "COMPLETED", "CANCELLED", "REFUNDED"];
 export function BookingsPanel({ isAdmin = false }: { isAdmin?: boolean }) {
   const [page, setPage] = useState(0); const [status, setStatus] = useState("");
   const [selected, setSelected] = useState<OperationsBooking | null>(null); const [nextStatus, setNextStatus] = useState("");
   const client = useQueryClient();
   const data = useQuery({ queryKey: ["admin", "bookings", page, status], queryFn: () => listOperationsBookings(page, status), retry: false });
-  const update = useMutation({ mutationFn: () => updateBookingStatus(selected!, nextStatus), onSuccess: async () => {
+  // Payments change the booking's version, so use the freshest copy from the reloaded list.
+  const update = useMutation({ mutationFn: () => updateBookingStatus(data.data?.content.find(b => b.reference === selected!.reference) ?? selected!, nextStatus), onSuccess: async () => {
     setSelected(null); await client.invalidateQueries({ queryKey: ["admin"] });
   } });
   return <section><div className="admin-heading"><div><p className="eyebrow">Reservations</p><h1>Customer bookings</h1><p>Review requests from guests and signed-in customers.</p></div><label>Status<select value={status} onChange={event => { setStatus(event.target.value); setPage(0); }}><option value="">All statuses</option>{statuses.map(item => <option key={item}>{item}</option>)}</select></label></div>
@@ -27,6 +29,7 @@ export function BookingsPanel({ isAdmin = false }: { isAdmin?: boolean }) {
       ["Received", new Date(selected.createdAt).toLocaleString()]
     ].map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value || "—"}</dd></div>)}</dl>
       <BookingResources key={`${selected.reference}-${selected.version}`} booking={selected} isAdmin={isAdmin} />
+      <BookingFinance key={`finance-${selected.reference}`} reference={selected.reference} isAdmin={isAdmin} />
       <form onSubmit={event => { event.preventDefault(); update.mutate(); }}><label>Booking status<select value={nextStatus} onChange={event => setNextStatus(event.target.value)}>{statuses.map(item => <option key={item}>{item}</option>)}</select></label><p className="form-note">Status changes are recorded. Completed and cancelled bookings cannot return to an earlier stage. Cancelling frees the booking's vehicle and driver; private trips are confirmed with “Confirm booking” above.</p>{update.isError && <ErrorState message={update.error.message} />}<button type="submit" className="button button-primary" disabled={update.isPending || nextStatus === selected.status}>{update.isPending ? "Saving…" : "Update status"}</button></form>
     </section>}
   </section>;

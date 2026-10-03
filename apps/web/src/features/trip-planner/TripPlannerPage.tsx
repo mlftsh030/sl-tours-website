@@ -1,3 +1,4 @@
+import { ReferralNotice } from "../partners/ReferralNotice";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { addDays, format } from "date-fns";
@@ -159,6 +160,7 @@ export function TripPlannerPage() {
             <textarea rows={5} {...form.register("notes")} />
           </label>
           {mutation.isError && <ErrorState message={(mutation.error as Error).message} />}
+          <ReferralNotice />
           <button className="button button-primary" type="submit" disabled={mutation.isPending}>
             {mutation.isPending ? "Sending..." : "Send Trip Request"}
           </button>

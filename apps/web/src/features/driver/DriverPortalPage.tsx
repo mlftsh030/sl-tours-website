@@ -27,7 +27,7 @@ export function DriverPortalPage() {
   if (session.isLoading) return <LoadingState label="Checking your session" />;
   if (session.isError) return <ErrorState message={session.error.message} />;
   if (!session.data?.authenticated) return <Navigate to="/login?next=%2Fdriver" replace />;
-  if (session.data.role !== "DRIVER") return <Navigate to={session.data.role === "CUSTOMER" ? "/account" : "/operations"} replace />;
+  if (session.data.role !== "DRIVER") return <Navigate to={session.data.role === "CUSTOMER" ? "/account" : session.data.role === "PARTNER" ? "/partner" : "/operations"} replace />;
   return <div className="driver-shell">
     <header className="driver-header"><Link to="/driver" className="driver-brand"><img src="/assets/logo.png" alt="" width="40" height="40" /><span>SL Tours<strong>Driver portal</strong></span></Link>
       <button className="icon-button" onClick={logout} disabled={pending} aria-label="Sign out"><LogOut aria-hidden="true" /></button></header>

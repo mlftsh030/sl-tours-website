@@ -18,7 +18,7 @@ export function MyTripPage() {
   if (session.isLoading) return <LoadingState label="Checking your session" />;
   if (session.isError) return <ErrorState message={session.error.message} />;
   if (!session.data?.authenticated) return <Navigate to="/login?next=%2Faccount" replace />;
-  if (session.data.role !== "CUSTOMER") return <Navigate to={session.data.role === "DRIVER" ? "/driver" : "/operations"} replace />;
+  if (session.data.role !== "CUSTOMER") return <Navigate to={session.data.role === "DRIVER" ? "/driver" : session.data.role === "PARTNER" ? "/partner" : "/operations"} replace />;
   return <main className="account-page section"><div className="admin-heading"><a href="/">SL Tours · Back to website</a><button className="button button-secondary" onClick={logout} disabled={pending}>Sign out</button></div>
     <p className="eyebrow">Your account</p><h1>Hello, {session.data.name}</h1><p>Your booking requests and their current status.</p>
     {error && <ErrorState message={error} />}{bookings.isLoading && <LoadingState label="Loading your bookings" />}{bookings.isError && <ErrorState message={bookings.error.message} />}

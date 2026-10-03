@@ -2921,3 +2921,57 @@ small.activity-caution { display: block; }
 @media (prefers-reduced-motion: no-preference) { .assistant-panel { animation: assistant-in 0.18s ease-out; } }
 @keyframes assistant-in { from { transform: translateX(24px); opacity: 0.6; } to { transform: none; opacity: 1; } }
 .assistant-panel:focus { outline: none; }
+
+/* Partnerships */
+.status-blocked { background: #fde8e6; color: var(--danger); }
+.referral-notice { margin: 4px 0 16px; padding: 10px 12px; border-left: 4px solid var(--sun); background: var(--sand); border-radius: var(--radius); font-size: .92rem; }
+.referral-remove { margin-left: 8px; padding: 0; border: 0; background: none; color: var(--ocean); font: inherit; font-size: .9rem; text-decoration: underline; cursor: pointer; min-height: 32px; }
+.referral-entry { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 14px; font-size: .9rem; }
+.referral-entry input { max-width: 180px; text-transform: uppercase; }
+.referral-entry .referral-remove { margin-left: 0; }
+.referral-error { color: var(--danger); width: 100%; }
+.partner-page { display: grid; gap: 28px; }
+.partner-routes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.partner-route > svg, .partner-facts svg { width: 30px; height: 30px; color: var(--burnt); }
+.partner-route h2 { margin: 8px 0; }
+.partner-route ul { padding-left: 18px; margin: 12px 0 0; display: grid; gap: 6px; }
+.partner-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.partner-facts h3 { margin: 6px 0; }
+.partner-form h2 { margin-top: 0; }
+.partner-consent { display: flex; width: 100%; margin: 16px 0; }
+.partner-form > .button { display: block; }
+.partner-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px; border-bottom: 1px solid var(--line); }
+.partner-tabs a { padding: 10px 14px; min-height: 44px; display: inline-flex; align-items: center; color: var(--ink); text-decoration: none; border-bottom: 3px solid transparent; font-weight: 600; }
+.partner-tabs a.active { border-bottom-color: var(--burnt); color: var(--ocean); }
+.partner-main { max-width: 1100px; }
+.partner-status-list { list-style: none; padding: 0; display: grid; gap: 8px; margin: 14px 0 20px; }
+.partner-status-list li { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.partner-status-list small { width: 100%; color: var(--muted); }
+.partner-link, .partner-shell .form-surface { margin-bottom: 18px; }
+.partner-copy { display: flex; gap: 8px; }
+.partner-copy input { flex: 1; min-width: 0; }
+.partner-copy .button svg { width: 16px; height: 16px; margin-right: 4px; }
+.partner-agreements { list-style: none; padding: 0; display: grid; gap: 10px; }
+.partner-agreements li { padding: 12px; border: 1px solid var(--line); border-radius: var(--radius); display: grid; gap: 4px; background: var(--paper); }
+.partner-agreements p { margin: 4px 0 0; }
+.partner-balance { font-size: 1.1rem; }
+.partner-table td small { display: block; color: var(--muted); }
+.partner-disclosure { border-left: 4px solid var(--sun); padding-left: 10px; }
+.booking-finance { margin: 18px 0; padding-top: 12px; border-top: 1px solid var(--line); }
+.booking-finance h3 { margin: 14px 0 6px; }
+.admin-inline-details { margin: 10px 0; }
+.admin-inline-details > summary { cursor: pointer; font-weight: 700; min-height: 44px; display: flex; align-items: center; color: var(--ocean); }
+.admin-route-row { padding: 10px 0; border-bottom: 1px solid var(--line); }
+.admin-route-row p { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0; }
+.admin-route-row small { width: 100%; color: var(--muted); }
+@media (max-width: 760px) {
+  .partner-routes, .partner-facts { grid-template-columns: 1fr; }
+  .partner-copy { flex-direction: column; }
+  .partner-table, .partner-table tbody, .partner-table tr, .partner-table td { display: block; min-width: 0; }
+  .partner-table { min-width: 0; }
+  .partner-table thead { display: none; }
+  .partner-table tr { border: 1px solid var(--line); border-radius: var(--radius); margin-bottom: 10px; padding: 8px 10px; background: var(--paper); }
+  .partner-table td { border: 0; padding: 4px 0; }
+  .partner-table td::before { content: attr(data-label); display: block; font-size: .75rem; font-weight: 700; color: var(--muted); text-transform: uppercase; }
+  .admin-inline-form label { min-width: 0; width: 100%; }
+}

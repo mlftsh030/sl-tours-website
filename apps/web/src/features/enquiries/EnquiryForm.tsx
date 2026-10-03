@@ -1,3 +1,4 @@
+import { ReferralNotice } from "../partners/ReferralNotice";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { CheckCircle2 } from "lucide-react";
 import { useState, type FormEvent } from "react";
@@ -141,6 +142,7 @@ export function EnquiryForm() {
           </a>
         </div>
       )}
+      <ReferralNotice />
       <button className="button button-primary" type="submit" disabled={send.isPending}>
         {send.isPending ? "Sending…" : send.isError ? "Try again" : "Send enquiry"}
       </button>

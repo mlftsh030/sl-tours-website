@@ -1,3 +1,4 @@
+import { ReferralNotice } from "../partners/ReferralNotice";
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import { createPortal } from "react-dom";
 import { useMutation } from "@tanstack/react-query";
@@ -143,6 +144,7 @@ function SendPlanForm({ conversationId, option, onCancel, onSent }: { conversati
     <label>Note <em className="optional">(optional)</em><textarea maxLength={800} rows={2} value={form.note} onChange={e => setForm({ ...form, note: e.target.value })} /></label>
     <label className="choice"><input type="checkbox" required checked={form.confirmed} onChange={e => setForm({ ...form, confirmed: e.target.checked })} />
       <span>I want to send option {option.id} to SL Tours</span></label>
+    <ReferralNotice />
     {send.isError && <p className="assistant-notice" role="alert">{send.error.message}</p>}
     <div className="assistant-send-actions">
       <button type="submit" className="button button-primary" disabled={!form.confirmed || send.isPending}>{send.isPending ? "Sending…" : "Send to SL Tours"}</button>

@@ -1,3 +1,4 @@
+import { withReferral } from "../../lib/referral";
 import { request } from "../../lib/api";
 import type { EnquiryReceipt, PricingDisclosures, PrivateTripReceipt, PrivateTripSearch, VehicleCard } from "../../types/api";
 
@@ -6,5 +7,5 @@ export const listFleet = () => request<{ vehicles: VehicleCard[]; disclosures: P
 export const searchPrivateTrips = (q: TripQuery) =>
   request<PrivateTripSearch>(`/api/v1/private-trips/availability?${new URLSearchParams({ date: q.date, time: q.time,
     durationMinutes: String(q.durationMinutes), passengers: String(q.passengers) })}`);
-export const requestPrivateTrip = (body: unknown) => request<PrivateTripReceipt>("/api/v1/private-trips/requests", { method: "POST", body: JSON.stringify(body) });
-export const requestPrivateTripQuote = (body: unknown) => request<EnquiryReceipt>("/api/v1/private-trips/quote-requests", { method: "POST", body: JSON.stringify(body) });
+export const requestPrivateTrip = (body: object) => request<PrivateTripReceipt>("/api/v1/private-trips/requests", { method: "POST", body: JSON.stringify(withReferral(body)) });
+export const requestPrivateTripQuote = (body: object) => request<EnquiryReceipt>("/api/v1/private-trips/quote-requests", { method: "POST", body: JSON.stringify(withReferral(body)) });

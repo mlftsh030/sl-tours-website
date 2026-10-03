@@ -32,11 +32,11 @@ export function AuthPage({ registration = false }: { registration?: boolean }) {
       const session = await signIn(email, password);
       client.clear(); client.setQueryData(["session"], session);
       if (admin && session.role !== "ADMIN" && session.role !== "STAFF") {
-        navigate(session.role === "DRIVER" ? "/driver" : "/operations", { replace: true }); return;
+        navigate(session.role === "DRIVER" ? "/driver" : session.role === "PARTNER" ? "/partner" : "/operations", { replace: true }); return;
       }
       const next = params.get("next");
-      const home = session.role === "CUSTOMER" ? "/account" : session.role === "DRIVER" ? "/driver" : "/operations";
-      const destination = next && /^\/(?:book\/|book-private-trip(?:\/|$)|account(?:\/|$)|operations(?:\/|$)|driver(?:\/|$))/.test(next) ? next : home;
+      const home = session.role === "CUSTOMER" ? "/account" : session.role === "DRIVER" ? "/driver" : session.role === "PARTNER" ? "/partner" : "/operations";
+      const destination = next && /^\/(?:book\/|book-private-trip(?:\/|$)|account(?:\/|$)|operations(?:\/|$)|driver(?:\/|$)|partner(?:\/|$))/.test(next) ? next : home;
       if (destination.startsWith("/book/")) window.location.assign(destination);
       else navigate(destination, { replace: true });
     } catch (err) { setError((err as Error).message); } finally { setPending(false); }

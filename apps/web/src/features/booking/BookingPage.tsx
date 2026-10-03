@@ -1,3 +1,4 @@
+import { ReferralNotice } from "../partners/ReferralNotice";
 import { useSession } from "../auth/useSession";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -157,6 +158,7 @@ export function BookingPage() {
             </label>
           </div>
           {booking.isError && <ErrorState message={(booking.error as Error).message} />}
+          <ReferralNotice />
           <button className="button button-primary" type="submit" disabled={booking.isPending}>
             {booking.isPending ? "Submitting..." : "Submit Booking Request"}
           </button>

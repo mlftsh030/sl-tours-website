@@ -81,7 +81,9 @@ export function ActivityDetailPage() {
           <h3>Sources</h3>
           <ul className="activity-sources">{a.sources.map(s => <li key={s.url}><a href={s.url} target="_blank" rel="noopener noreferrer">{s.publisher}</a>
             <small>{s.covers}. Checked {shortDate(s.accessedOn)}.</small></li>)}</ul>
-          <p className="form-note">SL Tours is not the operator of this activity. Prices and times can change; confirm with the operator before you go.</p>
+          {a.supplierName ? <p className="form-note partner-disclosure">This experience is provided by {a.supplierName}, an SL Tours supplier partner.
+            SL Tours has a commercial relationship with this supplier. Prices and times can change; confirm before you go.</p>
+          : <p className="form-note">SL Tours is not the operator of this activity. Prices and times can change; confirm with the operator before you go.</p>}
         </aside>
       </section>
       {a.faqs.length > 0 && <section className="section faq-section">

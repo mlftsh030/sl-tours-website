@@ -116,7 +116,7 @@ export interface OperationsBooking {
 }
 
 export interface PageResult<T> { content: T[]; number: number; totalPages: number; totalElements: number; }
-export interface Session { authenticated: boolean; email: string | null; name: string | null; role: "ADMIN" | "STAFF" | "CUSTOMER" | "DRIVER" | null; }
+export interface Session { authenticated: boolean; email: string | null; name: string | null; role: "ADMIN" | "STAFF" | "CUSTOMER" | "DRIVER" | "PARTNER" | null; }
 export type TourStatus = "DRAFT" | "ACTIVE" | "ARCHIVED";
 export interface AdminTour { id: string; version: number; status: TourStatus; displayOrder: number; cardNote: string | null; detail: TourDetail; }
 export interface SaveTour extends Omit<TourDetail, "cardNote"> { version: number; status: TourStatus; displayOrder: number; cardNote: string | null; }
@@ -283,6 +283,8 @@ export interface ActivityPage {
   hours: ActivityHoursRow[]; faqs: Array<{ question: string; answer: string }>;
   sources: Array<{ url: string; publisher: string; sourceType: SourceType; covers: string; accessedOn: string }>; updatedAt: string;
   participationRules: ParticipationRules; participationNote: string | null;
+  /** Set when an SL Tours supplier partner provides this experience; shown as a commercial-relationship disclosure. */
+  supplierName: string | null;
 }
 export type CostKind = "VERIFIED" | "ASSUMPTION" | "ESTIMATE" | "UNKNOWN" | "EXCLUDED";
 export interface ItineraryCostLine { label: string; quantity: number; unitAmountCents: number | null; amountCents: number | null; kind: CostKind; detail: string | null; sourceUrl: string | null; verifiedOn: string | null; }

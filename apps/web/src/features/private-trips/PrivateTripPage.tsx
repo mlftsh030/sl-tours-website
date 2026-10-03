@@ -1,3 +1,4 @@
+import { ReferralNotice } from "../partners/ReferralNotice";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { CheckCircle2, Info } from "lucide-react";
@@ -131,6 +132,7 @@ export function PrivateTripPage() {
           {notice && <ErrorState message={`${notice} The options above have been refreshed.`} />}
           {book.isError && !notice && <ErrorState message={book.error.message} />}
           {quoteRequest.isError && <ErrorState message={quoteRequest.error.message} />}
+          <ReferralNotice />
           <button className="button button-primary" type="submit" disabled={book.isPending || quoteRequest.isPending || (mode === "book" && !vehicle?.quote)}>
             {book.isPending || quoteRequest.isPending ? "Sending…" : mode === "quote" ? "Send quote request" : "Request this trip"}</button>
           {mode === "book" && <button type="button" className="text-link private-trip-switch" onClick={() => { setMode("quote"); setIdempotencyKey(newIdempotencyKey()); }}>My itinerary needs a custom quote</button>}

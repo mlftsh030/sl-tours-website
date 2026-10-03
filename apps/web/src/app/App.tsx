@@ -14,10 +14,12 @@ import { HomePage } from "../features/tours/HomePage";
 import { TourDetailPage } from "../features/tours/TourDetailPage";
 import { AppLayout } from "../layouts/AppLayout";
 import { AboutPage, ContactPage } from "./InfoPages";
+import { PartnerWithUsPage } from "../features/partners/PartnerWithUsPage";
 
 // Signed-in areas load on demand so public pages keep their original bundle size.
 const OperationsPage = lazy(() => import("../features/operations/OperationsPage").then(m => ({ default: m.OperationsPage })));
 const DriverPortalPage = lazy(() => import("../features/driver/DriverPortalPage").then(m => ({ default: m.DriverPortalPage })));
+const PartnerPortalPage = lazy(() => import("../features/partners/PartnerPortalPage").then(m => ({ default: m.PartnerPortalPage })));
 const MyTripPage = lazy(() => import("../features/customer-trip/MyTripPage").then(m => ({ default: m.MyTripPage })));
 const deferred = (page: ReactNode) => <Suspense fallback={<LoadingState label="Loading" />}>{page}</Suspense>;
 
@@ -26,6 +28,7 @@ export default function App() {
     <Routes>
       <Route path="operations/*" element={deferred(<OperationsPage />)} />
       <Route path="driver/*" element={deferred(<DriverPortalPage />)} />
+      <Route path="partner/*" element={deferred(<PartnerPortalPage />)} />
       <Route path="login" element={<AuthPage />} />
       <Route path="register" element={<AuthPage registration />} />
       <Route path="account" element={deferred(<MyTripPage />)} />
@@ -45,6 +48,7 @@ export default function App() {
         <Route path="gallery" element={<GalleryPage />} />
         <Route path="about" element={<AboutPage />} />
         <Route path="contact" element={<ContactPage />} />
+        <Route path="partner-with-us" element={<PartnerWithUsPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

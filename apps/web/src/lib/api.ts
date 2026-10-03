@@ -9,6 +9,7 @@ import type {
 } from "../types/api";
 
 import { isBackgroundRequest } from "./activity";
+import { withReferral } from "./referral";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 
@@ -55,17 +56,17 @@ export function getTour(slug: string) {
   return request<TourDetail>(`/api/v1/tours/${slug}`);
 }
 
-export function createBooking(payload: unknown) {
+export function createBooking(payload: object) {
   return request<BookingResponse>("/api/v1/bookings", {
     method: "POST",
-    body: JSON.stringify(payload)
+    body: JSON.stringify(withReferral(payload))
   });
 }
 
-export function createTripPlanningRequest(payload: unknown) {
+export function createTripPlanningRequest(payload: object) {
   return request<TripPlanningResponse>("/api/v1/trip-planning-requests", {
     method: "POST",
-    body: JSON.stringify(payload)
+    body: JSON.stringify(withReferral(payload))
   });
 }
 

@@ -1,3 +1,4 @@
+import { applyReferral } from "../lib/referral";
 import { WhatsAppIcon } from "../components/WhatsAppIcon";
 import { Menu, Search, X } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
@@ -53,7 +54,12 @@ export function AppLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const closeButton = useRef<HTMLButtonElement>(null);
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
+  // Partner referral links (?ref=CODE): validate and keep the code for later bookings and enquiries.
+  useEffect(() => {
+    const code = new URLSearchParams(search).get("ref");
+    if (code && /^[A-Za-z0-9]{4,20}$/.test(code)) applyReferral(code, "LINK").catch(() => undefined);
+  }, [search]);
   const overlay = pathname === "/";
 
   useEffect(() => {
@@ -187,6 +193,9 @@ export function AppLayout() {
               </li>
               <li>
                 <Link to="/plan-my-trip">Plan My Trip</Link>
+              </li>
+              <li>
+                <Link to="/partner-with-us">Partner with us</Link>
               </li>
               <li>
                 <a href="/account">My Trip</a>

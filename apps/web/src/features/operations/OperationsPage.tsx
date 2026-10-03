@@ -2,7 +2,7 @@ import { Link, NavLink, Navigate, Route, Routes, useNavigate } from "react-route
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { Compass, Menu, LayoutDashboard, Map, BookOpen, Users, LogOut, Inbox, Car, IdCard, ClipboardCheck, BadgeDollarSign, Images } from "lucide-react";
+import { Compass, Handshake, Menu, LayoutDashboard, Map, BookOpen, Users, LogOut, Inbox, Car, IdCard, ClipboardCheck, BadgeDollarSign, Images } from "lucide-react";
 import { useSession } from "../auth/useSession";
 import { signOut } from "../auth/authApi";
 import { LoadingState, ErrorState } from "../../components/StateBlocks";
@@ -17,6 +17,7 @@ import { AssignmentsPanel } from "./AssignmentsPanel";
 import { PricingPanel } from "./PricingPanel";
 import { SiteImagesPanel } from "./SiteImagesPanel";
 import { ActivitiesPanel } from "./ActivitiesPanel";
+import { PartnersPanel } from "./PartnersPanel";
 import { useDocumentTitle } from "../../lib/useDocumentTitle";
 import { useAdminLayout } from "./useAdminLayout";
 
@@ -40,6 +41,7 @@ export function OperationsPage() {
   if (session.isError) return <ErrorState message={session.error.message} />;
   if (!session.data?.authenticated) return <Navigate to="/login?admin=1" replace />;
   if (session.data.role === "DRIVER") return <Navigate to="/driver" replace />;
+  if (session.data.role === "PARTNER") return <Navigate to="/partner" replace />;
   if (session.data.role !== "ADMIN" && session.data.role !== "STAFF") return <main className="auth-page"><div className="form-surface"><h1>Staff access required</h1><p>This account does not have permission to access administration.</p><Link to="/account">My bookings</Link><button className="button button-secondary" onClick={logout} disabled={pending}>Sign out</button>{error && <ErrorState message={error} />}</div></main>;
   const isAdmin = session.data.role === "ADMIN";
   const links = [
@@ -52,6 +54,7 @@ export function OperationsPage() {
     { to: "/operations/tours", label: "Tours & prices", icon: Map },
     { to: "/operations/pricing", label: "Private-trip rates", icon: BadgeDollarSign },
     ...(isAdmin ? [{ to: "/operations/activities", label: "Explore activities", icon: Compass }] : []),
+    ...(isAdmin ? [{ to: "/operations/partners", label: "Partners", icon: Handshake }] : []),
     ...(isAdmin ? [{ to: "/operations/site-images", label: "Website images", icon: Images }] : []),
     { to: "/operations/customers", label: "Customers", icon: Users }
   ];
@@ -77,6 +80,7 @@ export function OperationsPage() {
         {isAdmin && <Route path="drivers" element={<DriversPanel />} />}
         {isAdmin && <Route path="site-images" element={<SiteImagesPanel />} />}
         {isAdmin && <Route path="activities" element={<ActivitiesPanel />} />}
+        {isAdmin && <Route path="partners" element={<PartnersPanel />} />}
         <Route path="customers" element={<CustomersPanel />} />
         <Route path="enquiries" element={<EnquiriesPanel />} />
         <Route path="*" element={<Navigate to="/operations" replace />} />
