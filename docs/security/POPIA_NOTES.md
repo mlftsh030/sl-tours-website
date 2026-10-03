@@ -34,3 +34,10 @@ This is an engineering overview, not legal advice.
   its retention terms before enabling live chat.
 - Contact details are collected only in the confirmation form when a visitor chooses to send a plan; that enquiry follows
   the normal enquiry retention policy.
+
+## Partners
+
+- Applicants consent to SL Tours using their business details to assess the application; the consent time is stored.
+- Referral partners see only booking and enquiry references, product type, date and coarse status for their referrals:
+  never guests' names, contact or travel details. Whether this may ever change is an open business decision.
+- Guests are told when a partner referred them and may remove the referral before submitting.

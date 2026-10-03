@@ -29,6 +29,15 @@ All POST/PUT/PATCH/DELETE requests require the CSRF header, including public sub
   `POST /api/v1/assistant/conversations`, `POST /api/v1/assistant/conversations/{id}/messages` `{message}`,
   `POST /api/v1/assistant/conversations/{id}/enquiry` `{optionId, name, email, phone?, note?, confirmed: true, idempotencyKey}`,
   `DELETE /api/v1/assistant/conversations/{id}`. 429 when limits are reached; 503 when chat is disabled.
+- Partnerships: `POST /api/v1/partner-applications` (public), `GET /api/v1/partners/referrals/{code}` (public, active codes only).
+  Partner area (PARTNER role, own records only): `GET /api/v1/partner/me|referrals|statement|proposals`, `POST /api/v1/partner/proposals`,
+  `PUT /api/v1/partner/proposals/{id}?version=`, `POST /api/v1/partner/proposals/{id}/withdraw?version=`.
+  Administration (ADMIN): `GET /api/v1/admin/partners[?status=]`, `GET /api/v1/admin/partners/{id}`, `POST …/{id}/decisions`, `POST …/{id}/agreements`,
+  `POST …/{id}/agreements/{agreementId}/end`, `POST …/{id}/payouts`, `POST …/{id}/supplier-payments`, `GET /api/v1/admin/partners/proposals[?status=]`,
+  `POST /api/v1/admin/partners/proposals/{id}/decision`. Booking finance: `GET /api/v1/admin/bookings/{reference}/finance` (staff and admin);
+  `POST …/payments`, `POST …/commission/evaluate`, `PUT …/referral` (ADMIN).
+- Public booking and enquiry submissions (tour bookings, private trips and quotes, enquiries, Plan My Trip, assistant plans) accept an optional
+  `referral: {code, capturedAt, source: LINK|CODE}`.
 - Itineraries accept an optional `exclude` list of activity slugs and return per-stop `cautions` and a `confidence` summary.
 - `GET /api/v1/seo/head?path=`, `GET /api/v1/seo/body?path=`, `GET /api/v1/seo/sitemap.xml`: server-rendered head tags, core content and sitemap (used by Nginx).
 - `GET /api/v1/public/site-images?slot=HOME_HERO|GALLERY`, `GET /api/v1/public/media/{id}` (PUBLIC files only).

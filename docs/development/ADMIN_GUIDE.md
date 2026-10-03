@@ -100,6 +100,21 @@ Customer contact summaries group booking contact email addresses for staff conve
 - "Shown to visitors as unconfirmed" lists overdue re-checks and unresolved doubts for each activity.
 - **Day-planner assumptions** (road factor, average speed, parking buffer, lunch length) are planning estimates shown to visitors.
 
+## Partners (administrators)
+
+- **Partners** lists applications by route status. Open a partner to approve, decline, suspend or reinstate each route
+  separately; declining and suspending need a reason that the partner can see.
+- **Record an agreement** exactly as signed: commission type and value, eligible amount, booking types, attribution
+  window, refund treatment, optional minimum and cap, or the supplier terms as agreed. Agreements cannot be edited; end
+  one and record a new one to change terms. No commission is earned without an agreement in force.
+- **Commission ledger**: tick unpaid lines and **Record payout** only after paying; the amount always equals the lines.
+- **Supplier payments** are recorded separately for supplier partners.
+- **Experience proposals awaiting review** appear at the top. Approving creates a draft in Explore activities; verify
+  prices, hours and limits from an official source there before publishing.
+- In **Bookings → Review**, record customer **payments and refunds** with their payment references. Commission depends on
+  these, and on the booking being marked completed. You can also change a booking's referral partner, with a reason, while
+  it has no commission. See [Partnerships](../product/PARTNERSHIPS.md).
+
 ## Development sample data
 
 Rows inserted by migration V2 are badged **Sample data** and, outside development, are never offered or assigned.

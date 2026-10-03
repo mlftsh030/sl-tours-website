@@ -71,6 +71,7 @@ Payment statuses: `PENDING`, `PROCESSING`, `PAID`, `FAILED`, `REFUNDED`, `PARTIA
 | V14 `seed_verified_activities` | 18 published and 5 draft activities researched on 3 Oct 2026, with sources, price rules, hours and FAQs. |
 
 | V15 `catalogue_uncertainty` | Uncertainty notes on prices, extras and hours; promotional prices; per-row check dates and observed date ranges for hours; participation-rule status. Records the conflicts and sampled sessions found in the October 2026 research. |
+| V17 `partnerships` | `PARTNER` role; `partners`, `partner_routes`, `partner_agreements` (no overlaps per route), `partner_commissions` (one EARNED and one REVERSAL per booking, one adjustment per refund), `partner_payouts`, `supplier_payments`, `supplier_proposals`, `referral_attribution_changes`; referral columns on `bookings` and `enquiries`; `payments` gains kind, received date and idempotency key; `activities.supplier_partner_id`. No commercial terms are seeded. |
 | V16 `planning_assistant` | `ASSISTANT` enquiry source; `assistant_usage_days` daily aggregate counters (no message content). |
 
 Assignment statuses: `SCHEDULED`, `AWAITING_RELEASE`, `RELEASED`, `RETURNED`, `CLOSED`, `CANCELLED`.
