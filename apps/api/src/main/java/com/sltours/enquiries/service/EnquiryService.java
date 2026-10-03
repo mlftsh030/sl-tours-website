@@ -79,6 +79,22 @@ public class EnquiryService {
         return enquiries.saveAndFlush(enquiry);
     }
 
+    /** A day plan the visitor chose and confirmed in the planning assistant. Retries with the same key return the first receipt. */
+    @Transactional
+    public EnquiryReceipt recordAssistantPlan(String name, String email, String phone, String summary, LocalDate date, int passengers, UUID idempotencyKey) {
+        var previous = existing(idempotencyKey);
+        if (previous.isPresent()) return previous.get();
+        Enquiry enquiry = new Enquiry();
+        enquiry.setSource(EnquirySource.ASSISTANT); enquiry.setType(EnquiryType.GENERAL);
+        applyContact(enquiry, name, email, phone);
+        enquiry.setMessage(summary.length() > 4000 ? summary.substring(0, 3999) + "…" : summary);
+        enquiry.setRequestedDate(date);
+        enquiry.setPassengers(Math.max(1, Math.min(60, passengers)));
+        enquiry.setIdempotencyKey(idempotencyKey);
+        Enquiry saved = store(enquiry);
+        return new EnquiryReceipt(saved.getReference(), saved.getStatus(), RECEIVED_MESSAGE, false);
+    }
+
     /** Private-trip itineraries that need manual pricing arrive here as quote requests. */
     @Transactional
     public Enquiry recordPrivateTripQuote(Enquiry enquiry) {

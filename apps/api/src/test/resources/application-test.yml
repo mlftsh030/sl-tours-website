@@ -6,3 +6,6 @@ sltours:
     allow-sample-rates: true
   inspections:
     min-vehicle-photos: 4
+  assistant:
+    # The development mock exercises the full tool loop without credentials.
+    provider: mock

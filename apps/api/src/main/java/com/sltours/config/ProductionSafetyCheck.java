@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 
 /**
  * Refuses to start when development-only behaviour could reach a real deployment: sample private-trip rates
- * shown as prices, or the dev profile (demo driver sign-ins) mixed with a production profile.
+ * shown as prices, the development mock assistant, or the dev profile (demo driver sign-ins) mixed with a production profile.
  */
 @Component
 public class ProductionSafetyCheck {
@@ -21,5 +21,7 @@ public class ProductionSafetyCheck {
         boolean sampleRates = environment.getProperty("sltours.pricing.allow-sample-rates", Boolean.class, false);
         if (sampleRates && !devOrTest)
             throw new IllegalStateException("sltours.pricing.allow-sample-rates is only permitted with the dev or test profile");
+        if ("mock".equalsIgnoreCase(environment.getProperty("sltours.assistant.provider", "none")) && !devOrTest)
+            throw new IllegalStateException("The development mock assistant is only permitted with the dev or test profile");
     }
 }

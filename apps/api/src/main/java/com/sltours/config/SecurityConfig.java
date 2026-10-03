@@ -53,6 +53,11 @@ public class SecurityConfig {
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/public/**", "/api/v1/private-trips/**", "/api/v1/activities", "/api/v1/activities/*",
                     "/api/v1/seo/**").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/itineraries").permitAll()
+                // Planning assistant: public, CSRF-protected, conversations bound to the visitor's session.
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/assistant/status").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/assistant/conversations", "/api/v1/assistant/conversations/*/messages",
+                    "/api/v1/assistant/conversations/*/enquiry").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/v1/assistant/conversations/*").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/private-trips/requests", "/api/v1/private-trips/quote-requests").permitAll()
                 .requestMatchers("/api/v1/account/**", "/api/v1/my-trip/**").hasRole("CUSTOMER")
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/tours", "/api/v1/tours/*").permitAll()

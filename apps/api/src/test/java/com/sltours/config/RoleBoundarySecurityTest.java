@@ -40,7 +40,7 @@ import org.springframework.test.web.servlet.MockMvc;
     AdminFleetController.class, AdminAssignmentController.class, AdminPrivateTripController.class, PrivateTripController.class,
     AdminMediaController.class, PublicMediaController.class, com.sltours.siteimages.SiteImageController.class,
     com.sltours.activities.controller.ActivityController.class, com.sltours.activities.controller.AdminActivityController.class,
-    com.sltours.seo.SeoController.class })
+    com.sltours.seo.SeoController.class, com.sltours.assistant.controller.AssistantController.class })
 @Import(SecurityConfig.class)
 @TestPropertySource(properties = { "sltours.cors.allowed-origins=http://localhost:5173" })
 class RoleBoundarySecurityTest {
@@ -66,6 +66,7 @@ class RoleBoundarySecurityTest {
     @MockBean com.sltours.activities.service.ActivityAdminService activityAdmin;
     @MockBean com.sltours.activities.service.PlanningService planningService;
     @MockBean com.sltours.seo.SeoService seoService;
+    @MockBean com.sltours.assistant.service.AssistantService assistant;
 
     private static final UUID ID = UUID.randomUUID();
     private static final String REVIEW = "{\"version\":0,\"notes\":\"ok\"}";
@@ -179,5 +180,28 @@ class RoleBoundarySecurityTest {
         mvc.perform(post("/api/v1/itineraries").with(csrf()).contentType(MediaType.APPLICATION_JSON).content(plan)).andExpect(status().isOk());
         verify(activityAdmin).list();
         verify(planningService, never()).update(anyLong(), any(), anyInt(), anyInt(), anyInt());
+    }
+
+    @Test void assistantIsPublicButCsrfProtectedAndBoundToTheVisitorSession() throws Exception {
+        org.mockito.Mockito.when(assistant.status()).thenReturn(new com.sltours.assistant.dto.AssistantDtos.Status(false,
+            com.sltours.assistant.dto.AssistantDtos.Mode.DISABLED, "Use the day planner"));
+        mvc.perform(get("/api/v1/assistant/status")).andExpect(status().isOk()).andExpect(jsonPath("$.mode").value("DISABLED"));
+        mvc.perform(post("/api/v1/assistant/conversations")).andExpect(status().isForbidden());
+        mvc.perform(post("/api/v1/assistant/conversations/abc/messages").contentType(MediaType.APPLICATION_JSON).content("{\"message\":\"hi\"}"))
+            .andExpect(status().isForbidden());
+        var session = new org.springframework.mock.web.MockHttpSession();
+        mvc.perform(post("/api/v1/assistant/conversations/abc/messages").session(session).with(csrf()).contentType(MediaType.APPLICATION_JSON)
+            .content("{\"message\":\"hi\"}")).andExpect(status().isOk());
+        org.mockito.Mockito.verify(assistant).send(org.mockito.ArgumentMatchers.eq("abc"), org.mockito.ArgumentMatchers.eq(session.getId()),
+            org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.eq("hi"));
+        mvc.perform(post("/api/v1/assistant/conversations/abc/messages").with(csrf()).contentType(MediaType.APPLICATION_JSON)
+            .content("{\"message\":\"\"}")).andExpect(status().isBadRequest());
+        mvc.perform(post("/api/v1/assistant/conversations/abc/enquiry").with(csrf()).contentType(MediaType.APPLICATION_JSON)
+            .content("{\"optionId\":\"A\",\"name\":\"V\",\"email\":\"v@example.com\",\"confirmed\":false,\"idempotencyKey\":\"" + ID + "\"}"))
+            .andExpect(status().isBadRequest());
+        org.mockito.Mockito.verify(assistant, org.mockito.Mockito.never()).submit(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.any());
+        mvc.perform(delete("/api/v1/assistant/conversations/abc").with(csrf())).andExpect(status().isNoContent());
+        mvc.perform(get("/api/v1/admin/enquiries")).andExpect(status().isUnauthorized());
     }
 }

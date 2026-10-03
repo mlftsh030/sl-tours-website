@@ -61,6 +61,37 @@ sltours:
   pricing:
     # Seeded sample rates are never shown as prices unless this is true (dev profile only).
     allow-sample-rates: false
+  catalogue:
+    # Re-check periods per kind of information. Older figures are still shown, but plans treat them as unconfirmed.
+    freshness:
+      standard-price-days: ${SLTOURS_FRESHNESS_PRICE_DAYS:180}
+      promotional-price-days: ${SLTOURS_FRESHNESS_PROMOTION_DAYS:14}
+      extra-days: ${SLTOURS_FRESHNESS_EXTRA_DAYS:180}
+      opening-hours-days: ${SLTOURS_FRESHNESS_HOURS_DAYS:120}
+      session-days: ${SLTOURS_FRESHNESS_SESSION_DAYS:30}
+      participation-days: ${SLTOURS_FRESHNESS_PARTICIPATION_DAYS:365}
+  assistant:
+    # none (chat disabled; the day planner remains), anthropic (live), or mock (dev/test profiles only).
+    provider: ${SLTOURS_ASSISTANT_PROVIDER:none}
+    model: ${SLTOURS_ASSISTANT_MODEL:claude-sonnet-5-5}
+    api-key: ${SLTOURS_ASSISTANT_API_KEY:}
+    base-url: ${SLTOURS_ASSISTANT_BASE_URL:https://api.anthropic.com}
+    request-timeout: ${SLTOURS_ASSISTANT_REQUEST_TIMEOUT:20s}
+    turn-timeout: ${SLTOURS_ASSISTANT_TURN_TIMEOUT:45s}
+    max-output-tokens: ${SLTOURS_ASSISTANT_MAX_OUTPUT_TOKENS:900}
+    max-tool-rounds: 6
+    max-message-chars: 1000
+    max-turns-per-conversation: ${SLTOURS_ASSISTANT_MAX_TURNS:20}
+    messages-per-session-per-hour: ${SLTOURS_ASSISTANT_SESSION_HOURLY:30}
+    messages-per-address-per-hour: ${SLTOURS_ASSISTANT_ADDRESS_HOURLY:60}
+    max-active-conversations: ${SLTOURS_ASSISTANT_MAX_CONVERSATIONS:500}
+    conversation-idle-timeout: ${SLTOURS_ASSISTANT_IDLE_TIMEOUT:30m}
+    daily-model-request-limit: ${SLTOURS_ASSISTANT_DAILY_REQUESTS:2000}
+    # Spending controls. Live chat stays disabled until all four are set; use the provider's current price list.
+    input-usd-per-million-tokens: ${SLTOURS_ASSISTANT_INPUT_USD_PER_MTOK:}
+    output-usd-per-million-tokens: ${SLTOURS_ASSISTANT_OUTPUT_USD_PER_MTOK:}
+    daily-spend-limit-usd: ${SLTOURS_ASSISTANT_DAILY_LIMIT_USD:}
+    monthly-spend-limit-usd: ${SLTOURS_ASSISTANT_MONTHLY_LIMIT_USD:}
   storage:
     # Private uploads (inspection photos, selfies, driver documents). Mount a persistent Docker volume here.
     local-root: ${SLTOURS_MEDIA_ROOT:./data/media}

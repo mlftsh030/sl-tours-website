@@ -16,6 +16,12 @@ class ProductionSafetyCheckTest {
         assertThatThrownBy(() -> ProductionSafetyCheck.verify(env("production", "dev"))).hasMessageContaining("cannot be combined");
         assertThatThrownBy(() -> ProductionSafetyCheck.verify(env("prod", "dev"))).hasMessageContaining("cannot be combined");
     }
+    @Test void developmentMockAssistantIsRefusedOutsideDevAndTest() {
+        assertThatThrownBy(() -> ProductionSafetyCheck.verify(env("production").withProperty("sltours.assistant.provider", "mock")))
+            .hasMessageContaining("mock assistant");
+        assertThatThrownBy(() -> ProductionSafetyCheck.verify(env().withProperty("sltours.assistant.provider", "MOCK"))).hasMessageContaining("mock assistant");
+        assertThatCode(() -> ProductionSafetyCheck.verify(env("dev").withProperty("sltours.assistant.provider", "mock"))).doesNotThrowAnyException();
+    }
     @Test void normalConfigurationsStart() {
         assertThatCode(() -> ProductionSafetyCheck.verify(env("production"))).doesNotThrowAnyException();
         assertThatCode(() -> ProductionSafetyCheck.verify(env("dev").withProperty("sltours.pricing.allow-sample-rates", "true"))).doesNotThrowAnyException();
