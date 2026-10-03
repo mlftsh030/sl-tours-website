@@ -34,9 +34,10 @@ public class ActivityAdminService {
     @Transactional
     public AdminActivity create(SaveActivityRequest r) {
         if (activities.existsBySlug(r.slug())) throw new ConflictException("An activity with this URL already exists");
-        Activity a = new Activity();
-        Set<UUID> sourceIds = applyWithSources(a, r);
-        activities.saveAndFlush(a);
+        Activity draft = new Activity();
+        Set<UUID> sourceIds = applyWithSources(draft, r);
+        // Continue with the managed instance: save() may merge into a copy, and rows added to the original would be lost.
+        Activity a = activities.saveAndFlush(draft);
         applyCitingRows(a, r, sourceIds);
         activities.flush();
         audit.record("ACTIVITY_CREATED", a.getId().toString(), a.getSlug());
